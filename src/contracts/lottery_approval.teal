@@ -1,0 +1,716 @@
+#pragma version 6
+txn ApplicationID
+int 0
+==
+bnz main_l35
+txn OnCompletion
+int DeleteApplication
+==
+bnz main_l34
+txn OnCompletion
+int OptIn
+==
+bnz main_l33
+txna ApplicationArgs 0
+byte "start"
+==
+bnz main_l26
+txna ApplicationArgs 0
+byte "buy"
+==
+bnz main_l22
+txna ApplicationArgs 0
+byte "end"
+==
+bnz main_l18
+txna ApplicationArgs 0
+byte "check"
+==
+bnz main_l10
+txna ApplicationArgs 0
+byte "fund"
+==
+bnz main_l9
+err
+main_l9:
+txn NumAccounts
+int 1
+==
+byte "STATUS"
+app_global_get
+int 2
+==
+&&
+byte "POOL"
+app_global_get
+int 1000000
+>
+&&
+txna Accounts 0
+balance
+int 1000000
+>
+&&
+assert
+byte "POOL"
+app_global_get
+store 27
+byte "NEXTLOTTERY"
+app_global_get
+store 28
+txna Accounts 1
+load 28
+callsub sendfunds_1
+byte "POOL"
+load 27
+load 28
+-
+app_global_put
+byte "STATUS"
+int 3
+app_global_put
+int 1
+return
+main_l10:
+int 1
+int 0
+app_opted_in
+byte "END"
+app_global_get
+global LatestTimestamp
+<
+&&
+byte "STATUS"
+app_global_get
+int 1
+==
+&&
+assert
+int 0
+byte "TICKETCOUNT"
+app_local_get
+store 22
+byte "WINNINGTICKET"
+app_global_get
+store 23
+int 0
+store 25
+int 0
+byte "TICKETS"
+app_local_get
+store 20
+int 0
+store 26
+main_l11:
+load 26
+load 22
+<
+bnz main_l15
+main_l12:
+load 25
+int 1
+==
+bnz main_l14
+main_l13:
+int 0
+byte "WINNER"
+load 25
+app_local_put
+int 1
+return
+main_l14:
+byte "WINNERREWARD"
+app_global_get
+store 24
+txna Accounts 0
+load 24
+callsub sendfunds_1
+b main_l13
+main_l15:
+load 20
+load 26
+getbyte
+store 21
+load 23
+load 21
+==
+bnz main_l17
+load 26
+int 1
++
+store 26
+b main_l11
+main_l17:
+int 1
+store 25
+b main_l12
+main_l18:
+gtxn 0 RekeyTo
+global ZeroAddress
+==
+gtxn 1 RekeyTo
+global ZeroAddress
+==
+&&
+assert
+int 1
+int 0
+app_opted_in
+global GroupSize
+int 2
+==
+&&
+txn GroupIndex
+int 0
+==
+&&
+txn NumAccounts
+int 3
+==
+&&
+byte "END"
+app_global_get
+global LatestTimestamp
+<
+&&
+gtxn 1 TypeEnum
+int pay
+==
+&&
+gtxn 1 Receiver
+global CurrentApplicationAddress
+==
+&&
+gtxn 1 CloseRemainderTo
+global ZeroAddress
+==
+&&
+gtxn 1 Amount
+int 1000000
+>=
+&&
+assert
+byte "TICKETS"
+app_global_get
+int 5
+>=
+byte "PLAYERS"
+app_global_get
+int 2
+>=
+&&
+bnz main_l21
+byte "START"
+app_global_get
+store 18
+byte "END"
+app_global_get
+store 19
+byte "END"
+load 19
+load 18
+-
+global LatestTimestamp
++
+app_global_put
+main_l20:
+int 1
+return
+main_l21:
+byte "x"
+byte "a"
+app_global_get
+byte "x"
+app_global_get
+*
+byte "c"
+app_global_get
++
+byte "m"
+app_global_get
+%
+app_global_put
+byte "WINNINGTICKET"
+byte "x"
+app_global_get
+byte "TICKETS"
+app_global_get
+%
+app_global_put
+byte "POOL"
+app_global_get
+int 5
+*
+int 100
+/
+store 16
+byte "WINNERREWARD"
+byte "POOL"
+app_global_get
+int 50
+*
+int 100
+/
+app_global_put
+byte "NEXTLOTTERY"
+byte "POOL"
+app_global_get
+int 35
+*
+int 100
+/
+app_global_put
+txna Accounts 1
+load 16
+callsub sendfunds_1
+txna Accounts 2
+load 16
+callsub sendfunds_1
+txna Accounts 3
+load 16
+callsub sendfunds_1
+byte "POOL"
+app_global_get
+store 17
+byte "POOL"
+load 17
+load 16
+int 3
+*
+-
+app_global_put
+byte "STATUS"
+int 1
+app_global_put
+b main_l20
+main_l22:
+gtxn 0 RekeyTo
+global ZeroAddress
+==
+gtxn 1 RekeyTo
+global ZeroAddress
+==
+&&
+assert
+int 1
+int 0
+app_opted_in
+global GroupSize
+int 2
+==
+&&
+txn GroupIndex
+int 0
+==
+&&
+txn NumAppArgs
+int 2
+==
+&&
+global LatestTimestamp
+byte "END"
+app_global_get
+<
+&&
+int 0
+byte "TICKETCOUNT"
+app_local_get
+int 100
+<=
+&&
+txna ApplicationArgs 1
+btoi
+int 100
+<=
+&&
+gtxn 1 TypeEnum
+int pay
+==
+&&
+gtxn 1 Receiver
+global CurrentApplicationAddress
+==
+&&
+gtxn 1 CloseRemainderTo
+global ZeroAddress
+==
+&&
+gtxn 1 Amount
+byte "PRICE"
+app_global_get
+txna ApplicationArgs 1
+btoi
+*
+==
+&&
+gtxn 1 Sender
+gtxn 0 Sender
+==
+&&
+assert
+byte "TICKETS"
+app_global_get
+store 11
+load 11
+txna ApplicationArgs 1
+btoi
++
+store 12
+load 11
+store 15
+main_l23:
+load 15
+load 12
+<
+bnz main_l25
+byte "TICKETS"
+load 12
+app_global_put
+byte "POOL"
+app_global_get
+store 13
+byte "POOL"
+load 13
+gtxn 1 Amount
++
+app_global_put
+byte "x"
+byte "a"
+app_global_get
+byte "x"
+app_global_get
+*
+byte "c"
+app_global_get
++
+byte "m"
+app_global_get
+%
+app_global_put
+int 1
+return
+main_l25:
+int 0
+byte "TICKETCOUNT"
+app_local_get
+store 14
+int 0
+byte "TICKETS"
+byte "TICKETS"
+load 14
+load 15
+setbyte
+app_local_put
+int 0
+byte "TICKETCOUNT"
+load 14
+int 1
++
+app_local_put
+load 15
+int 1
++
+store 15
+b main_l23
+main_l26:
+gtxn 0 RekeyTo
+global ZeroAddress
+==
+gtxn 1 RekeyTo
+global ZeroAddress
+==
+&&
+assert
+global GroupSize
+int 2
+==
+txn GroupIndex
+int 0
+==
+&&
+gtxn 1 TypeEnum
+int pay
+==
+&&
+gtxn 1 Receiver
+global CurrentApplicationAddress
+==
+&&
+gtxn 1 CloseRemainderTo
+global ZeroAddress
+==
+&&
+gtxn 1 Amount
+int 1000000
+>=
+&&
+gtxn 1 Sender
+gtxn 0 Sender
+==
+&&
+txn NumApplications
+byte "PREVAPP"
+app_global_get
+==
+&&
+assert
+byte "START"
+global LatestTimestamp
+app_global_put
+byte "END"
+global LatestTimestamp
+byte "DURATION"
+app_global_get
++
+app_global_put
+byte "STARTER"
+txn Sender
+app_global_put
+txn NumApplications
+byte "PREVAPP"
+app_global_get
+==
+bnz main_l28
+main_l27:
+int 1
+return
+main_l28:
+txn Fee
+global MinTxnFee
+int 2
+*
+>=
+assert
+txna Applications 1
+byte "a"
+app_global_get_ex
+store 2
+store 1
+txna Applications 1
+byte "c"
+app_global_get_ex
+store 4
+store 3
+txna Applications 1
+byte "m"
+app_global_get_ex
+store 6
+store 5
+txna Applications 1
+byte "x"
+app_global_get_ex
+store 8
+store 7
+load 2
+load 4
+&&
+load 6
+&&
+load 8
+&&
+bnz main_l32
+main_l29:
+itxn_begin
+int appl
+itxn_field TypeEnum
+txna Applications 1
+itxn_field ApplicationID
+int NoOp
+itxn_field OnCompletion
+byte "fund"
+itxn_field ApplicationArgs
+global CurrentApplicationAddress
+itxn_field Accounts
+int 0
+itxn_field Fee
+itxn_submit
+txna Applications 1
+byte "NEXTLOTTERY"
+app_global_get_ex
+store 10
+store 9
+load 10
+bnz main_l31
+byte "POOL"
+int 0
+app_global_put
+b main_l27
+main_l31:
+byte "POOL"
+load 9
+app_global_put
+b main_l27
+main_l32:
+byte "a"
+load 1
+app_global_put
+byte "c"
+load 3
+app_global_put
+byte "m"
+load 5
+app_global_put
+byte "x"
+load 7
+app_global_put
+b main_l29
+main_l33:
+byte "PLAYERS"
+app_global_get
+store 0
+int 0
+byte "ID"
+load 0
+int 1
++
+app_local_put
+byte "PLAYERS"
+load 0
+int 1
++
+app_global_put
+int 0
+byte "TICKETCOUNT"
+int 0
+app_local_put
+int 0
+byte "TICKETS"
+byte 0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+app_local_put
+int 1
+return
+main_l34:
+txn Sender
+global CreatorAddress
+==
+byte "STATUS"
+app_global_get
+int 0
+==
+byte "STATUS"
+app_global_get
+int 3
+==
+||
+&&
+return
+main_l35:
+gtxn 0 RekeyTo
+global ZeroAddress
+==
+assert
+txn Note
+byte "lottery:uv1"
+==
+txn NumAppArgs
+int 2
+==
+&&
+txna ApplicationArgs 0
+btoi
+int 0
+!=
+&&
+txna ApplicationArgs 1
+btoi
+int 0
+>
+&&
+txn NumApplications
+int 0
+==
+txn NumApplications
+int 1
+==
+||
+&&
+assert
+byte "PREVAPP"
+int 0
+app_global_put
+txn NumApplications
+int 1
+==
+bnz main_l37
+main_l36:
+byte "DURATION"
+txna ApplicationArgs 0
+btoi
+app_global_put
+byte "PRICE"
+txna ApplicationArgs 1
+btoi
+app_global_put
+byte "PLAYERS"
+int 0
+app_global_put
+byte "TICKETS"
+int 0
+app_global_put
+byte "POOL"
+int 0
+app_global_put
+byte "STATUS"
+int 0
+app_global_put
+byte "a"
+int 75
+app_global_put
+byte "c"
+int 74
+app_global_put
+byte "m"
+int 65537
+app_global_put
+byte "x"
+int 28652
+app_global_put
+int 1
+return
+main_l37:
+txna Applications 1
+callsub prevlotterystatus_0
+int 2
+==
+bnz main_l39
+int 0
+return
+main_l39:
+byte "PREVAPP"
+int 1
+app_global_put
+b main_l36
+
+// prev_lottery_status
+prevlotterystatus_0:
+store 29
+load 29
+byte "STATUS"
+app_global_get_ex
+store 31
+store 30
+load 31
+bnz prevlotterystatus_0_l2
+int 0
+store 32
+b prevlotterystatus_0_l3
+prevlotterystatus_0_l2:
+load 30
+store 32
+prevlotterystatus_0_l3:
+load 32
+retsub
+
+// send_funds
+sendfunds_1:
+store 34
+store 33
+itxn_begin
+int pay
+itxn_field TypeEnum
+load 33
+itxn_field Receiver
+load 34
+itxn_field Amount
+itxn_submit
+retsub

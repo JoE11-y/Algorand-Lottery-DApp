@@ -1,0 +1,29 @@
+on_create = Seq([
+    App.globalPut(
+        Bytes("array"),
+        Bytes("base16", "0x000000000000000000000000000000000000000000000000000000000000")),  # determines array length (10 bytes)
+    Int(1)
+])
+
+The length of the array is determined by how many bytes we initialize. In the above example, each hexadecimal digit is 4 bits or half a byte.
+
+
+A bit is a single binary 1 or 0. The binary number 11010 contains 5 bits.
+A byte is a number made of 8 bits. The binary number 01111011 contains 8 bits, which means it must be a byte.
+
+A byte is also able to hold exactly 2 hexadecimal digits. This is also what a typical byte might look like:
+B6
+(it has 2 hexadecimal digits)
+
+Now, I'll be giving you a list of the common data units:
+
+Bit = A single 1 or 0.
+Nibble = 4 bits = 1 hexadecimal digit
+Byte = 8 bits = 2 hexadecimal digits
+Word = 16 bits = 4 hexadecimal digits
+Dword = 32 bits = 8 hexadecimal digits
+Qword = 64 bits = 16 hexadecimal digits
+
+We are going to work mainly with Dwords, numbers that are 8 hexadecimal digits long.
+
+Base32 is the base-32 numeral system. It uses a set of 32 digits, each of which can be represented by 5 bits (25)
