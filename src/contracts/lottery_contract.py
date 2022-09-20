@@ -279,6 +279,15 @@ class Lottery:
 
         return Seq(
             [
+                Assert(
+                    And(
+                        # check to see if lottery has started
+                        Global.latest_timestamp()
+                        < App.globalGet(self.Global_Variables.lottery_end_time),
+                        # check lottery status
+                        App.globalGet(self.Global_Variables.status) == Int(1),
+                    )
+                ),
                 no_of_players.store(
                     App.globalGet(self.Global_Variables.total_no_of_players)
                 ),
@@ -340,9 +349,11 @@ class Lottery:
                         Txn.group_index() == Int(0),
                         # check the number of arguments passed is 2
                         Txn.application_args.length() == Int(2),
-                        # check to see if lottery has ended
+                        # check to see if lottery has not  ended
                         Global.latest_timestamp()
                         < App.globalGet(self.Global_Variables.lottery_end_time),
+                        # check lottery status
+                        App.globalGet(self.Global_Variables.status) == Int(1),
                         # check that user hasn't bought more than 100 tickets
                         App.localGet(Int(0), self.Local_Variables.no_of_tickets)
                         <= Int(100),
@@ -444,9 +455,7 @@ class Lottery:
 
         prize_pool_amount = ScratchVar(TealType.uint64)
 
-        lottery_start = ScratchVar(TealType.uint64)
-
-        lottery_end = ScratchVar(TealType.uint64)
+        lottery_duration = ScratchVar(TealType.uint64)
         return Seq(
             [
                 # check rekey for both transactions
@@ -510,18 +519,12 @@ class Lottery:
                 .Else(
                     Seq(
                         # Reset the lottery time
-                        lottery_start.store(
-                            App.globalGet(self.Global_Variables.lottery_start_time)
-                        ),
-                        lottery_end.store(
-                            App.globalGet(self.Global_Variables.lottery_end_time)
+                        lottery_duration.store(
+                            App.globalGet(self.Global_Variables.lottery_duration)
                         ),
                         App.globalPut(
                             self.Global_Variables.lottery_end_time,
-                            (
-                                (lottery_end.load() - lottery_start.load())
-                                + Global.latest_timestamp()
-                            ),
+                            (Global.latest_timestamp() + lottery_duration.load()),
                         ),
                     )
                 ),
@@ -541,7 +544,7 @@ class Lottery:
             [
                 Assert(
                     And(
-                        # check that user has opted in (only lottery participants can close the lottery)
+                        # check that user has opted in
                         # Int(0), which points to the first application in the application list
                         # Int(1), pointing to current account
                         App.optedIn(Int(1), Int(0)),
