@@ -37,7 +37,7 @@ Here's how prize money is distributed:
 
 -  After which the user is now able to buy tickets, until the lottery duration expires.
 
--  When session duration expires, and the end lottery function is called by any user (note: User must have opted in to lottery, and user pays 1 algo fee) the lottery is subjected to checks to see if it's valid or not
+-  When session duration expires, and the end lottery function is called by any user (note: User must have opted in to lottery, and user pays 1 algo fee to end lottery) the lottery is subjected to checks to see if it's valid or not
 
         
          Minimum of 5 tickets and 2 Players
