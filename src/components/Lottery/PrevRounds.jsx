@@ -1,11 +1,7 @@
 import React, { useState } from "react";
 import Loader from "../ui/Loader";
 import { Button } from "react-bootstrap";
-import {
-  truncateAddress,
-  convertTime,
-  microAlgosToString,
-} from "../../utils/conversions";
+import { convertTime, microAlgosToString } from "../../utils/conversions";
 
 const PrevRounds = ({ Lotteries, checkIfWinner }) => {
   const [loading, setLoading] = useState(false);
@@ -72,13 +68,22 @@ const PrevRounds = ({ Lotteries, checkIfWinner }) => {
                 </p>
                 <p>
                   <strong>Winner: </strong>
-                  <a
-                    href={`https://testnet.algoexplorer.io/address/${lottery.winner}`}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    {truncateAddress(lottery.winner)}
-                  </a>
+                  {lottery.user_is_winner === 0 && userOptedIn()
+                    ? "Check if you're the winner "
+                    : lottery.user_is_winner === 2
+                    ? "Congratulations You won "
+                    : lottery.user_is_winner === 1
+                    ? "Sorry You Lost "
+                    : ""}{" "}
+                  {(!userOptedIn() || lottery.user_is_winner !== 0) && (
+                    <a
+                      href={`https://testnet.algoexplorer.io/address/${lottery.winner}`}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      View Winner
+                    </a>
+                  )}
                 </p>
               </div>
               <div className="lottery-body">
@@ -104,7 +109,7 @@ const PrevRounds = ({ Lotteries, checkIfWinner }) => {
                 </p>
               </div>
               <div className="lottery-footer">
-                {userOptedIn() && (
+                {userOptedIn() && lottery.user_is_winner === 0 && (
                   <Button
                     variant="success"
                     className="check-if-winner"

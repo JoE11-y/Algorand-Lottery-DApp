@@ -91,7 +91,7 @@ class Lottery:
                 Assert(
                     And(
                         # check note attached is valid
-                        Txn.note() == Bytes("algolottery:uv1"),
+                        Txn.note() == Bytes("algolottery:uv2"),
                         # check the number of arguments passed is 2, lotteryDuration, ticketPrice
                         Txn.application_args.length() == Int(2),
                         # check that the duration is greater than 0
@@ -264,6 +264,7 @@ class Lottery:
                     self.Global_Variables.total_no_of_players,
                     (no_of_players.load() + Int(1)),
                 ),
+                # initialize tickets as 0
                 App.localPut(
                     Txn.accounts[0], self.Local_Variables.no_of_tickets, Int(0)
                 ),
@@ -276,6 +277,8 @@ class Lottery:
                         "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
                     ),
                 ),
+                # initialize isWinner as 0
+                App.localPut(Txn.accounts[0], self.Local_Variables.isWinner, Int(0)),
                 Approve(),
             ]
         )
@@ -297,6 +300,9 @@ class Lottery:
         new_total_tickets = ScratchVar(TealType.uint64)
         prizepool = ScratchVar(TealType.uint64)
         no_of_tickets = Txn.application_args[1]
+        user_ticket_array = App.localGet(
+            Txn.accounts[0], self.Local_Variables.ticketArray
+        )
         user_existing_ticket_count = ScratchVar(TealType.uint64)
         i = ScratchVar(TealType.uint64)
         return Seq(
@@ -358,7 +364,7 @@ class Lottery:
                         Txn.accounts[0],
                         self.Local_Variables.ticketArray,
                         SetByte(
-                            self.Local_Variables.ticketArray,
+                            user_ticket_array,
                             user_existing_ticket_count.load(),
                             i.load(),
                         ),
@@ -524,6 +530,9 @@ class Lottery:
                         > App.globalGet(self.Global_Variables.lottery_end_time),
                         # check to see if lottery status has been set to 2, meaning lottery ended
                         App.globalGet(self.Global_Variables.status) == Int(2),
+                        # check that user hasn't entered this function already
+                        App.localGet(Txn.accounts[0], self.Local_Variables.isWinner)
+                        == Int(0),
                     )
                 ),
                 user_ticket_count.store(
@@ -532,7 +541,7 @@ class Lottery:
                 winning_ticket.store(
                     App.globalGet(self.Global_Variables.winningTicket)
                 ),
-                isWinner.store(Int(0)),
+                isWinner.store(Int(1)),
                 ticket_array_stored.store(
                     App.localGet(Txn.accounts[0], self.Local_Variables.ticketArray)
                 ),
@@ -545,10 +554,10 @@ class Lottery:
                     ticket.store(GetByte(ticket_array_stored.load(), i.load())),
                     # check if it's equal to the winning ticket id
                     If(winning_ticket.load() == ticket.load()).Then(
-                        Seq(isWinner.store(Int(1)), Break())
+                        Seq(isWinner.store(Int(2)), Break())
                     ),
                 ),
-                If(isWinner.load() == Int(1)).Then(
+                If(isWinner.load() == Int(2)).Then(
                     Seq(
                         winners_reward.store(
                             App.globalGet(self.Global_Variables.winner_reward)

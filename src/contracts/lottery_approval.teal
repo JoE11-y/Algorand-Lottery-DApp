@@ -85,6 +85,12 @@ app_global_get
 int 2
 ==
 &&
+txna Accounts 0
+byte "ISWINNER"
+app_local_get
+int 0
+==
+&&
 assert
 txna Accounts 0
 byte "TICKETCOUNT"
@@ -93,7 +99,7 @@ store 15
 byte "WINNINGTICKET"
 app_global_get
 store 16
-int 0
+int 1
 store 18
 txna Accounts 0
 byte "TICKETS"
@@ -108,7 +114,7 @@ load 15
 bnz main_l15
 main_l12:
 load 18
-int 1
+int 2
 ==
 bnz main_l14
 main_l13:
@@ -144,7 +150,7 @@ int 1
 store 19
 b main_l11
 main_l17:
-int 1
+int 2
 store 18
 b main_l12
 main_l18:
@@ -399,7 +405,9 @@ app_local_get
 store 8
 txna Accounts 0
 byte "TICKETS"
+txna Accounts 0
 byte "TICKETS"
+app_local_get
 load 8
 load 9
 setbyte
@@ -567,6 +575,10 @@ txna Accounts 0
 byte "TICKETS"
 byte 0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 app_local_put
+txna Accounts 0
+byte "ISWINNER"
+int 0
+app_local_put
 int 1
 return
 main_l34:
@@ -590,7 +602,7 @@ global ZeroAddress
 ==
 assert
 txn Note
-byte "algolottery:uv1"
+byte "algolottery:uv2"
 ==
 txn NumAppArgs
 int 2

@@ -265,23 +265,37 @@ const Lottery = ({ address, fetchBalance }) => {
                   {lotteryEnded() && checkLotteryStatus(2) && userOptedIn() && (
                     <div className="winner">
                       <p>
-                        <strong>Winner Status: </strong>
-                        {currentLottery.user_is_winner === 1
-                          ? "Congratulations you are the winner"
-                          : currentLottery.user_is_winner === 0
-                          ? "Check if you are winner"
-                          : "Try again next time"}
+                        <strong>Winner: </strong>
+                        {currentLottery.user_is_winner === 0 && userOptedIn()
+                          ? "Check if you're the winner "
+                          : currentLottery.user_is_winner === 2
+                          ? "Congratulations You won "
+                          : currentLottery.user_is_winner === 1
+                          ? "Sorry You Lost "
+                          : ""}{" "}
+                        {(!userOptedIn() ||
+                          currentLottery.user_is_winner !== 0) && (
+                          <a
+                            href={`https://testnet.algoexplorer.io/address/${currentLottery.winner}`}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            View Winner
+                          </a>
+                        )}
                       </p>
-                      <div className="button-body">
-                        {" "}
-                        <Button
-                          variant="success"
-                          className="check-if-winner right"
-                          onClick={() => checkIfWinner(currentLottery)}
-                        >
-                          Check
-                        </Button>
-                      </div>
+                      {currentLottery.user_is_winner === 0 && (
+                        <div className="button-body">
+                          {" "}
+                          <Button
+                            variant="success"
+                            className="check-if-winner right"
+                            onClick={() => checkIfWinner(currentLottery)}
+                          >
+                            Check
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

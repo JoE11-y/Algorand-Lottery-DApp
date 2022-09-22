@@ -31,7 +31,7 @@ export const myAlgoConnect = new MyAlgoConnect();
 export const minRound = 21540981;
 
 // https://github.com/algorandfoundation/ARCs/blob/main/ARCs/arc-0002.md
-export const lotteryNote = "algolottery:uv1";
+export const lotteryNote = "algolottery:uv2";
 
 // Maximum local storage allocation, immutable
 export const numLocalInts = 3;

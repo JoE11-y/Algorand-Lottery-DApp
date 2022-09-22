@@ -148,8 +148,6 @@ export const startLotteryAction = async (senderAddress, newLottery) => {
     params.flatFee = true;
   }
 
-  console.log(params);
-
   let amount = stringToMicroAlgos(1);
 
   // Create ApplicationCallTxn
