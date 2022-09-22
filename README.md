@@ -54,8 +54,7 @@ Here's how prize money is distributed:
 ## 1. Tech Stack
 This boilerplate uses the following tech stack:
 - [React](https://reactjs.org/) - A JavaScript library for building user interfaces.
-- [near-sdk-as](contractkit
-) - A frontend library for interacting with the Near Protocol Testnet.
+- [algosdk](https://algorand.github.io/js-algorand-sdk/modules.html) - A frontend library for interacting with the Algorand Blockchain.
 - [Bootstrap](https://getbootstrap.com/) - A CSS framework that provides responsive, mobile-first layouts.
 
 
