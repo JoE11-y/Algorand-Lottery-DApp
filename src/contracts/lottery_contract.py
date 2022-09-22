@@ -91,7 +91,7 @@ class Lottery:
                 Assert(
                     And(
                         # check note attached is valid
-                        Txn.note() == Bytes("algolottery:uv2"),
+                        Txn.note() == Bytes("algorandlottery:uv1"),
                         # check the number of arguments passed is 2, lotteryDuration, ticketPrice
                         Txn.application_args.length() == Int(2),
                         # check that the duration is greater than 0
@@ -439,10 +439,13 @@ class Lottery:
                 check_rekey_zero(2),
                 Assert(
                     And(
-                        # check that user has opted in
+                        # check that user has opted in or that lottery_session is not valid
                         # Txn.applications[0], which points to the first application in the application list
                         # Txn.accounts[0], pointing to current account
-                        App.optedIn(Txn.accounts[0], Txn.applications[0]),
+                        Or(
+                            App.optedIn(Txn.accounts[0], Txn.applications[0]),
+                            lottery_valid == Int(0),
+                        ),
                         # check that the number of transactions within the group transaction is 2.
                         # because of the payment
                         Global.group_size() == Int(2),

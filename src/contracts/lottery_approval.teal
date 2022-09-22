@@ -165,6 +165,18 @@ assert
 txna Accounts 0
 txna Applications 0
 app_opted_in
+byte "TICKETS"
+app_global_get
+int 5
+>=
+byte "PLAYERS"
+app_global_get
+int 2
+>=
+&&
+int 0
+==
+||
 global GroupSize
 int 2
 ==
@@ -602,7 +614,7 @@ global ZeroAddress
 ==
 assert
 txn Note
-byte "algolottery:uv2"
+byte "algorandlottery:uv1"
 ==
 txn NumAppArgs
 int 2
