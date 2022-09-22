@@ -38,9 +38,9 @@ Here's how prize money is distributed:
 
 -  When session duration expires, and the end lottery function is called by any user (note: User must have opted in to lottery, and user pays 1 algo fee) the lottery is subjected to checks to see if it's valid or not
 
-         ```
+        
          Minimum of 5 :ticket: and 2 :two_men_holding_hands:
-         ```
+        
 
    - If Valid, then the prize pool is distributed and the lucky winning ticket position is generated, then the creator, starter and ender are rewarded.
 
