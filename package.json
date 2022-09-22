@@ -1,5 +1,6 @@
 {
   "name": "algorand-lottery-dapp",
+  "homepage": "https://JoE11-y.github.io/Algorand-Lottery-DApp",
   "version": "0.1.0",
   "private": true,
   "dependencies": {

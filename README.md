@@ -7,9 +7,49 @@
 
 ![-----------------------------------------------------](https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/cloudy.png)
 
-[link to dapp](https://JoE11-y.github.io/Near-Lottery)
-
+[link to dapp](https://JoE11-y.github.io/Algorand-Lottery-DApp) 
 A simple lottery contract that awards a lucky winner with a half of the generated prizepot.
+
+The Lottery is not controlled by anyone as everyone who has opted in can start and end the lottery, within is allocated time.
+
+
+## Prize Pool
+Here's how prize money is distributed:
+   - Lottery Winner (Lucky winner)                       - 50%
+
+   - Lottery Creator (User who creates the new lottery)  - 5%
+
+   - Lottery Starter (User who starts the lottery)       - 5%
+
+   - Lottery Ender (User who ends the Lottery)           - 5%
+
+   - Next Lottery (Prizepool of next lottery)            - 35% 
+
+
+
+## Lottery Flow
+-  Before a lottery session can be started, The Lottery application is first created, this is where the user inputs the duration in minutes and the price of the tickets for that session.
+
+-  Now after creation, To start the lottery session, the user has to deposit 1 Algo as that is the minimum required amount for an application to be able to do transactions on it's own.
+
+-  Next the user has to opt in, as before you can use this lottery (due to it being a stateful application) the user must subscribe to it.
+
+-  After which the user is now able to buy tickets, until the lottery duration expires.
+
+-  When session duration expires, and the end lottery function is called by any user (note: User must have opted in to lottery, and user pays 1 algo fee) the lottery is subjected to checks to see if it's valid or not
+
+         ```
+         Minimum of 5 :ticket: and 2 :two_men_holding_hands:
+         ```
+
+   - If Valid, then the prize pool is distributed and the lucky winning ticket position is generated, then the creator, starter and ender are rewarded.
+
+   - If not Valid, then the lottery end time is reset using the duration provided by the lottery creator.
+
+- Finally after the lottery session is over, user's can then check to see if they possess the winning ticket and whoever finds it, triggers the function that sends the reward to him.
+
+- On next lottery restart the lottery itself calls the previous lottery and requests for the fund allocated for it.
+
 
 ## 1. Tech Stack
 This boilerplate uses the following tech stack:
