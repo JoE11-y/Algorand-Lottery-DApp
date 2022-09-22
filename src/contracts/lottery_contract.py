@@ -16,7 +16,7 @@ def check_rekey_zero(
 
 
 class Lottery:
-    class Global_Variables:  # Total of 17 global ints, 2 global bytes
+    class Global_Variables:  # Total of 16 global ints, 3 global bytes
         lottery_duration = Bytes("DURATION")  # Lottery duration // uint64
         lottery_start_time = Bytes("START")  # Lottery starttime // uint64
         lottery_end_time = Bytes("END")  # Lottery end time // uint64
@@ -33,6 +33,8 @@ class Lottery:
         starter = Bytes("STARTER")  # Lottery starter address // Bytes
         ender = Bytes("ENDER")  # Lottery ender address // Bytes
 
+        winner = Bytes("WINNER")  # wWinner Address // Bytes
+
         # pool money allocated for winner // uint64
         winner_reward = Bytes("WINNERREWARD")
 
@@ -48,13 +50,13 @@ class Lottery:
         modulus = Bytes("m")  # // uint64
         seed = Bytes("x")  # // uint64
 
-    class Local_Variables:  # Total of 2 local ints, 1 local bytes
+    class Local_Variables:  # Total of 3 local ints, 1 local bytes
         id = Bytes("ID")  # user Id // uint64
         no_of_tickets = Bytes("TICKETCOUNT")  # no of tickets bought // uint64
         ticketArray = Bytes("TICKETS")  # tickets position array // Bytes
 
-        # if user is winner (1) or not (0) // uint64
-        isWinner = Bytes("WINNER")
+        # if user is winner (2) or not (1) // uint64
+        isWinner = Bytes("ISWINNER")
 
     class AppMethods:
         start_lottery = Bytes("start")
@@ -89,38 +91,18 @@ class Lottery:
                 Assert(
                     And(
                         # check note attached is valid
-                        Txn.note() == Bytes("lottery:uv1"),
+                        Txn.note() == Bytes("algolottery:uv1"),
                         # check the number of arguments passed is 2, lotteryDuration, ticketPrice
                         Txn.application_args.length() == Int(2),
                         # check that the duration is greater than 0
                         Btoi(Txn.application_args[0]) != Int(0),
                         # check that the ticketPrice is greater than 0
                         Btoi(Txn.application_args[1]) > Int(0),
-                        Or(
-                            # Ensure that application id is passed or not
-                            Txn.applications.length() == Int(0),
-                            Txn.applications.length() == Int(1),
-                        ),
+                        Txn.applications.length() == Int(1),
                     )
                 ),
-                # initialize value of prev_app as 0, then update if prev_app is passed in
-                App.globalPut(self.Global_Variables.prev_app, Int(0)),
-                If(Txn.applications.length() == Int(1)).Then(
-                    Seq(
-                        [
-                            # check if previous lottery has ended, if not reject
-                            If(
-                                Or(
-                                    # int(2) meaning ended
-                                    prev_app_status
-                                    == Int(2),
-                                )
-                            )
-                            .Then(App.globalPut(self.Global_Variables.prev_app, Int(1)))
-                            .Else(Reject())
-                        ]
-                    )
-                ),
+                # store value of previous app
+                App.globalPut(self.Global_Variables.prev_app, Txn.applications[1]),
                 # store variables
                 App.globalPut(
                     self.Global_Variables.lottery_duration,
@@ -144,37 +126,14 @@ class Lottery:
             ]
         )
 
-    # checks prev contract for random_gen_params, if present update random gen params
-    def get_random_gen_parameters(self, prev_lottery: Expr):
-        get_multiplier = App.globalGetEx(prev_lottery, Bytes("a"))
-        get_increment = App.globalGetEx(prev_lottery, Bytes("c"))
-        get_modulus = App.globalGetEx(prev_lottery, Bytes("m"))
+    # checks prev contract for seed, if present update
+    def get_seed_from_prev_lottery(self, prev_lottery: Expr):
         get_seed = App.globalGetEx(prev_lottery, Bytes("x"))
-
         return Seq(
             [
-                get_multiplier,
-                get_increment,
-                get_modulus,
                 get_seed,
-                If(
-                    And(
-                        get_multiplier.hasValue(),
-                        get_increment.hasValue(),
-                        get_modulus.hasValue(),
-                        get_seed.hasValue(),
-                    )
-                ).Then(
+                If(get_seed.hasValue()).Then(
                     Seq(
-                        App.globalPut(
-                            self.Global_Variables.multiplier, get_multiplier.value()
-                        ),
-                        App.globalPut(
-                            self.Global_Variables.increment, get_increment.value()
-                        ),
-                        App.globalPut(
-                            self.Global_Variables.modulus, get_modulus.value()
-                        ),
                         App.globalPut(self.Global_Variables.seed, get_seed.value()),
                     )
                 ),
@@ -219,7 +178,10 @@ class Lottery:
 
         prev_app = App.globalGet(self.Global_Variables.prev_app)
 
-        prev_app_present = Txn.applications.length() == prev_app
+        valid_app_id = And(
+            prev_app != Int(0),
+            Txn.applications[1] == prev_app,
+        )
 
         return Seq(
             [
@@ -238,8 +200,8 @@ class Lottery:
                         Gtxn[1].close_remainder_to() == Global.zero_address(),
                         Gtxn[1].amount() >= Int(1000000),
                         Gtxn[1].sender() == Gtxn[0].sender(),
-                        # check if prev app was present on creation and request for it on startup
-                        prev_app_present,
+                        # check app array is passed
+                        Txn.applications.length() == Int(1),
                     )
                 ),
                 # set start time and end time
@@ -252,8 +214,9 @@ class Lottery:
                 ),
                 # store address of starter
                 App.globalPut(self.Global_Variables.starter, Txn.sender()),
+                App.globalPut(self.Global_Variables.status, Int(1)),
                 # check if prev app was passed in and update accordingly
-                If(prev_app_present).Then(
+                If(valid_app_id).Then(
                     Seq(
                         [
                             # require first transaction fee to cover:
@@ -261,7 +224,7 @@ class Lottery:
                             # - funds retrieval transaction fee
                             Assert(Txn.fee() >= Global.min_txn_fee() * Int(2)),
                             # uppdate random gen parameters with the last values from the previous lottery
-                            self.get_random_gen_parameters(Txn.applications[1]),
+                            self.get_seed_from_prev_lottery(Txn.applications[1]),
                             # run money grab to get the rest of prizepool money from the previous lottery
                             self.retrieve_funds(Txn.applications[1]),
                             # update the prize pool
@@ -292,17 +255,21 @@ class Lottery:
                     App.globalGet(self.Global_Variables.total_no_of_players)
                 ),
                 App.localPut(
-                    Int(0), self.Local_Variables.id, (no_of_players.load() + Int(1))
+                    Txn.accounts[0],
+                    self.Local_Variables.id,
+                    (no_of_players.load() + Int(1)),
                 ),
                 # update no of players
                 App.globalPut(
                     self.Global_Variables.total_no_of_players,
                     (no_of_players.load() + Int(1)),
                 ),
-                App.localPut(Int(0), self.Local_Variables.no_of_tickets, Int(0)),
+                App.localPut(
+                    Txn.accounts[0], self.Local_Variables.no_of_tickets, Int(0)
+                ),
                 # creates byte array that can store up to 100 bytes (100 tickets)
                 App.localPut(
-                    Int(0),
+                    Txn.accounts[0],
                     self.Local_Variables.ticketArray,
                     Bytes(
                         "base16",
@@ -339,9 +306,9 @@ class Lottery:
                 Assert(
                     And(
                         # check that user has opted in
-                        # Int(0), which points to the first application in the application list
-                        # Int(1), pointing to current account
-                        App.optedIn(Int(1), Int(0)),
+                        # Txn.applications[0], which points to the first application in the application list
+                        # Txn.accounts[0], pointing to current account
+                        App.optedIn(Txn.accounts[0], Txn.applications[0]),
                         # check that the number of transactions within the group transaction is 2.
                         # because of the payment
                         Global.group_size() == Int(2),
@@ -355,7 +322,9 @@ class Lottery:
                         # check lottery status
                         App.globalGet(self.Global_Variables.status) == Int(1),
                         # check that user hasn't bought more than 100 tickets
-                        App.localGet(Int(0), self.Local_Variables.no_of_tickets)
+                        App.localGet(
+                            Txn.accounts[0], self.Local_Variables.no_of_tickets
+                        )
                         <= Int(100),
                         # check that the amount of tickets to be bought is less than or equal to 100 tickets. Max per user
                         Btoi(no_of_tickets) <= Int(100),
@@ -380,11 +349,13 @@ class Lottery:
                 ).Do(
                     # get the existing user ticket count
                     user_existing_ticket_count.store(
-                        App.localGet(Int(0), self.Local_Variables.no_of_tickets)
+                        App.localGet(
+                            Txn.accounts[0], self.Local_Variables.no_of_tickets
+                        )
                     ),
                     # update the array, with index position and ticket number
                     App.localPut(
-                        Int(0),
+                        Txn.accounts[0],
                         self.Local_Variables.ticketArray,
                         SetByte(
                             self.Local_Variables.ticketArray,
@@ -394,7 +365,7 @@ class Lottery:
                     ),
                     # update user existing ticket count
                     App.localPut(
-                        Int(0),
+                        Txn.accounts[0],
                         self.Local_Variables.no_of_tickets,
                         (user_existing_ticket_count.load() + Int(1)),
                     ),
@@ -462,10 +433,10 @@ class Lottery:
                 check_rekey_zero(2),
                 Assert(
                     And(
-                        # check that user has opted in (only lottery participants can close the lottery)
-                        # Int(0), which points to the first application in the application list
-                        # Int(1), pointing to current account
-                        App.optedIn(Int(1), Int(0)),
+                        # check that user has opted in
+                        # Txn.applications[0], which points to the first application in the application list
+                        # Txn.accounts[0], pointing to current account
+                        App.optedIn(Txn.accounts[0], Txn.applications[0]),
                         # check that the number of transactions within the group transaction is 2.
                         # because of the payment
                         Global.group_size() == Int(2),
@@ -475,8 +446,8 @@ class Lottery:
                         # contains the address of the lottery starter, ender and creator address
                         Txn.accounts.length() == Int(3),
                         # check to see if lottery session has ended
-                        App.globalGet(self.Global_Variables.lottery_end_time)
-                        < Global.latest_timestamp(),
+                        Global.latest_timestamp()
+                        > App.globalGet(self.Global_Variables.lottery_end_time),
                         # checks for second transaction which is to pay 1 algo
                         Gtxn[1].type_enum() == TxnType.Payment,
                         Gtxn[1].receiver() == Global.current_application_address(),
@@ -512,8 +483,8 @@ class Lottery:
                             self.Global_Variables.prizepool,
                             (prize_pool_amount.load() - (rewards.load() * Int(3))),
                         ),
-                        # update lottery status to ended which is 1
-                        App.globalPut(self.Global_Variables.status, Int(1)),
+                        # update lottery status to ended which is 2
+                        App.globalPut(self.Global_Variables.status, Int(2)),
                     )
                 )
                 .Else(
@@ -545,25 +516,25 @@ class Lottery:
                 Assert(
                     And(
                         # check that user has opted in
-                        # Int(0), which points to the first application in the application list
-                        # Int(1), pointing to current account
-                        App.optedIn(Int(1), Int(0)),
+                        # Txn.applications[0], which points to the first application in the application list
+                        # Txn.accounts[0], pointing to current account
+                        App.optedIn(Txn.accounts[0], Txn.applications[0]),
                         # check to see if lottery session has ended
-                        App.globalGet(self.Global_Variables.lottery_end_time)
-                        < Global.latest_timestamp(),
-                        # check to see if lottery status has been set to 1, meaning winner has been gotten
-                        App.globalGet(self.Global_Variables.status) == Int(1),
+                        Global.latest_timestamp()
+                        > App.globalGet(self.Global_Variables.lottery_end_time),
+                        # check to see if lottery status has been set to 2, meaning lottery ended
+                        App.globalGet(self.Global_Variables.status) == Int(2),
                     )
                 ),
                 user_ticket_count.store(
-                    App.localGet(Int(0), self.Local_Variables.no_of_tickets)
+                    App.localGet(Txn.accounts[0], self.Local_Variables.no_of_tickets)
                 ),
                 winning_ticket.store(
                     App.globalGet(self.Global_Variables.winningTicket)
                 ),
                 isWinner.store(Int(0)),
                 ticket_array_stored.store(
-                    App.localGet(Int(0), self.Local_Variables.ticketArray)
+                    App.localGet(Txn.accounts[0], self.Local_Variables.ticketArray)
                 ),
                 For(
                     i.store(Int(0)),
@@ -582,11 +553,16 @@ class Lottery:
                         winners_reward.store(
                             App.globalGet(self.Global_Variables.winner_reward)
                         ),
+                        # send the reward
                         self.send_funds(Txn.accounts[0], winners_reward.load()),
+                        # store winners address
+                        App.globalPut(self.Global_Variables.winner, Txn.sender()),
                     )
                 ),
                 # update local variables
-                App.localPut(Int(0), self.Local_Variables.isWinner, isWinner.load()),
+                App.localPut(
+                    Txn.accounts[0], self.Local_Variables.isWinner, isWinner.load()
+                ),
                 Approve(),
             ]
         )
@@ -605,7 +581,7 @@ class Lottery:
                         # check that prizepool contains more than 1 algo
                         App.globalGet(self.Global_Variables.prizepool) > Int(1000000),
                         # check that the balance of this lottery is more than 1 algo too
-                        Balance(Txn.accounts[0]) > Int(1000000),
+                        Balance(Global.current_application_address()) > Int(1000000),
                     )
                 ),
                 prize_pool_amount.store(App.globalGet(self.Global_Variables.prizepool)),
@@ -619,7 +595,7 @@ class Lottery:
                     self.Global_Variables.prizepool,
                     (prize_pool_amount.load() - next_lottery_fund.load()),
                 ),
-                # update lottery status to paid out which is 2
+                # update lottery status to paid out which is 3
                 App.globalPut(self.Global_Variables.status, Int(3)),
                 Approve(),
             ]

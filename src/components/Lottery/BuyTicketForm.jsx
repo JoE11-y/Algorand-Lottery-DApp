@@ -1,10 +1,9 @@
 import React, { useState } from "react";
 import { Modal, Button, Form, FloatingLabel } from "react-bootstrap";
-import { utils } from "near-api-js";
-import BigNumber from "bignumber.js";
+import { microAlgosToString } from "../../utils/conversions";
 
-const BuyTicketForm = ({ ticketPrice, open, onClose, buyTicket }) => {
-  const [amount, setAmount] = useState("");
+const BuyTicketForm = ({ lottery, open, onClose, buyTicket }) => {
+  const [amount, setAmount] = useState(0);
   const [noOfTickets, setTicketNumber] = useState(0);
   const handleClose = () => {
     onClose();
@@ -12,21 +11,16 @@ const BuyTicketForm = ({ ticketPrice, open, onClose, buyTicket }) => {
 
   function onChange(e) {
     const noOfTickets = e.target.value;
-    const amounts = new BigNumber(ticketPrice)
-      .multipliedBy(noOfTickets)
-      .toNumber();
-    if (isNaN(amounts)) {
-      return;
-    }
+    const amounts = microAlgosToString(lottery.ticket_price) * noOfTickets;
     setTicketNumber(noOfTickets);
-    setAmount(amounts.toLocaleString("fullwide", { useGrouping: false }));
+    setAmount(amounts);
   }
 
   function onSubmit() {
     if (!noOfTickets) {
       return;
     }
-    buyTicket(noOfTickets, amount);
+    buyTicket(lottery, noOfTickets);
 
     handleClose();
   }
@@ -37,12 +31,13 @@ const BuyTicketForm = ({ ticketPrice, open, onClose, buyTicket }) => {
         <Modal.Title>Buy TIckets</Modal.Title>
       </Modal.Header>
       <Modal.Body>
-        <p>Ticket Price: {utils.format.formatNearAmount(ticketPrice)} NEAR</p>
-        <p>You Pay: {utils.format.formatNearAmount(amount)} NEAR</p>
+        <p>Ticket Price: {microAlgosToString(lottery.ticket_price)} ALGO</p>
+        <p>You Pay: {amount} ALGO</p>
         <Form onSubmit={onSubmit}>
           <FloatingLabel
             controlId="floatingNoOfTickets"
             label="Number Of Tickets"
+            className="mb-3"
           >
             <Form.Control
               type="number"
@@ -50,9 +45,11 @@ const BuyTicketForm = ({ ticketPrice, open, onClose, buyTicket }) => {
               placeholder="Number of Tickets"
             />
           </FloatingLabel>
-          <Button variant="success" type="submit" disabled={!noOfTickets}>
-            Pay Now
-          </Button>
+          <Modal.Footer>
+            <Button variant="success" type="submit" disabled={!noOfTickets}>
+              Pay Now
+            </Button>
+          </Modal.Footer>
         </Form>
       </Modal.Body>
     </Modal>

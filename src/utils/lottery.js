@@ -4,13 +4,10 @@ import { Base64 } from "js-base64";
 /* eslint import/no-webpack-loader-syntax: off */
 import ApprovalProgram from "!!raw-loader!../contracts/lottery_approval.teal";
 import ClearProgram from "!!raw-loader!../contracts/lottery_clear.teal";
-import {
-  base64ToUTF8String,
-  utf8ToBase64String,
-  stringToMicroAlgos,
-} from "./conversions";
+import { utf8ToBase64String, stringToMicroAlgos } from "./conversions";
+import { dummyLottery } from "./constants";
 
-class Lottery {
+export class Lottery {
   constructor(
     appId,
     appAddress,
@@ -26,11 +23,12 @@ class Lottery {
     winning_ticket,
     starter,
     ender,
-    winner_reward,
+    winner,
     next_lottery_fund,
     prev_app,
     user_id,
-    user_no_of_tickets
+    user_no_of_tickets,
+    user_is_winner
   ) {
     this.appId = appId;
     this.appAddress = appAddress;
@@ -46,11 +44,12 @@ class Lottery {
     this.winning_ticket = winning_ticket;
     this.starter = starter;
     this.ender = ender;
-    this.winner_reward = winner_reward;
+    this.winner = winner;
     this.next_lottery_fund = next_lottery_fund;
     this.prev_app = prev_app;
     this.user_id = user_id;
     this.user_no_of_tickets = user_no_of_tickets;
+    this.user_is_winner = user_is_winner;
   }
 }
 
@@ -65,8 +64,8 @@ const compileProgram = async (programSource) => {
 // CREATE Lottery: ApplicationCreateTxn
 export const createLotteryAction = async (
   senderAddress,
-  newLottery,
-  oldLottery
+  newLotteryData,
+  prevLottery
 ) => {
   console.log("Creating new Lottery...");
 
@@ -77,14 +76,13 @@ export const createLotteryAction = async (
   const compiledClearProgram = await compileProgram(ClearProgram);
 
   // Build note to identify transaction later and required app args as Uint8Array
-  let duration = algosdk.encodeUint64(convertMins(newLottery.duration));
-  let ticketPrice = algosdk.encodeUint64(newLottery.ticketPrice);
+  let duration = algosdk.encodeUint64(newLotteryData.duration);
+  let ticketPrice = algosdk.encodeUint64(newLotteryData.ticketPrice);
+  let note = new TextEncoder().encode(algo.lotteryNote);
   let appArgs = [duration, ticketPrice];
-  let foreignApps = [];
+  let foreignApps = [prevLottery.appId];
 
-  if (oldLottery.appId) {
-    foreignApps.push(lottery.appId);
-  }
+  console.log(foreignApps);
 
   let txn = algosdk.makeApplicationCreateTxnFromObject({
     from: senderAddress,
@@ -134,11 +132,7 @@ export const createLotteryAction = async (
 };
 
 // START LOTTERY:
-export const startLotteryAction = async (
-  senderAddress,
-  newLottery,
-  oldLottery
-) => {
+export const startLotteryAction = async (senderAddress, newLottery) => {
   console.log("Starting Lottery...");
 
   let params = await algo.algodClient.getTransactionParams().do();
@@ -147,13 +141,14 @@ export const startLotteryAction = async (
   let startArg = new TextEncoder().encode("start");
   let appArgs = [startArg];
 
-  let foreignApps = [];
+  let foreignApps = [newLottery.prev_app];
 
-  if (oldLottery.appId) {
-    foreignApps.push(oldLottery.appId);
+  if (newLottery.prev_app !== 0) {
     params.fee = algosdk.ALGORAND_MIN_TX_FEE * 2;
     params.flatFee = true;
   }
+
+  console.log(params);
 
   let amount = stringToMicroAlgos(1);
 
@@ -249,16 +244,16 @@ export const joinLotteryAction = async (senderAddress, index) => {
 };
 
 // BUY TICKETS: No op Action
-export const buyTicketAction = async (senderAddress, lottery, noOfLottery) => {
+export const buyTicketAction = async (senderAddress, lottery, noOfTickets) => {
   console.log("Buying Tickets...");
 
   let params = await algo.algodClient.getTransactionParams().do();
 
-  let noOfLotteryArgs = algosdk.encodeUint64(noOfLottery);
+  let noOfTicketsArgs = algosdk.encodeUint64(Number(noOfTickets));
 
   // Build required app args as Uint8Array
   let buyTicketArg = new TextEncoder().encode("buy");
-  let appArgs = [buyTicketArg, noOfLotteryArgs];
+  let appArgs = [buyTicketArg, noOfTicketsArgs];
 
   // Create ApplicationCallTxn
   let appCallTxn = algosdk.makeApplicationCallTxnFromObject({
@@ -268,12 +263,12 @@ export const buyTicketAction = async (senderAddress, lottery, noOfLottery) => {
     suggestedParams: params,
     appArgs: appArgs,
   });
-  // Create PaymentTxn
 
+  // Create PaymentTxn
   let paymentTxn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
     from: senderAddress,
     to: lottery.appAddress,
-    amount: lottery.ticket_price * noOfLottery,
+    amount: lottery.ticket_price * noOfTickets,
     suggestedParams: params,
   });
 
@@ -370,7 +365,7 @@ export const endLotteryAction = async (senderAddress, lottery) => {
 };
 
 // CHECK IF WINNER: no_op_call
-export const checkIfWinner = async (senderAddress, lottery) => {
+export const checkIfWinnerAction = async (senderAddress, lottery) => {
   console.log("Running check...");
 
   let params = await algo.algodClient.getTransactionParams().do();
@@ -413,7 +408,7 @@ export const checkIfWinner = async (senderAddress, lottery) => {
 };
 
 // DELETE LOTTERY:
-export const deleteLotteryAction = async (senderAddress, lottery) => {
+export const deleteLotteryAction = async (senderAddress, index) => {
   console.log("Deleting application");
 
   let params = await algo.algodClient.getTransactionParams().do();
@@ -457,7 +452,7 @@ export const deleteLotteryAction = async (senderAddress, lottery) => {
 };
 
 // GET Lotteries: Using Indexer
-export const getAuctionsAction = async (senderAddress) => {
+export const getLotteriesAction = async (senderAddress) => {
   console.log("Fetching Lotteries...");
   let note = new TextEncoder().encode(algo.lotteryNote);
   let encodedNote = Buffer.from(note).toString("base64");
@@ -497,126 +492,162 @@ const getApplication = async (appId, senderAddress) => {
       return null;
     }
 
-    // console.log(response.application);
-
     let globalState = response.application.params["global-state"];
-    let appAddress = algosdk.getApplicationAddress(appId);
-    let creatorAddress = response.application.params.creator;
+    // 2. Parse fields of response and return lottery
+    let newLottery = JSON.parse(JSON.stringify(dummyLottery));
 
-    await read_local_state(senderAddress, appId);
+    newLottery.appId = appId;
 
-    // 2. Parse fields of response and return product
-    let lottery_duration = "";
-    let lottery_start_time = "";
-    let lottery_end_time = "";
-    let total_no_of_players = "";
-    let total_no_of_tickets = "";
-    let ticket_price = "";
-    let prize_pool = "";
-    let status = "";
-    let winning_ticket = "";
-    let starter = "";
-    let ender = "";
-    let winner_reward = "";
-    let next_lottery_fund = "";
-    let prev_app = "";
+    newLottery.appAddress = algosdk.getApplicationAddress(appId);
 
-    let user_id = "";
-    let user_no_of_tickets = "";
+    newLottery.creatorAddress = response.application.params.creator;
 
     if (getField("DURATION", globalState) !== undefined) {
-      lottery_duration = getField("PLAYERS", globalState).value.uint;
+      newLottery.lottery_duration = getField(
+        "DURATION",
+        globalState
+      ).value.uint;
     }
 
     if (getField("START", globalState) !== undefined) {
-      lottery_start_time = getField("PLAYERS", globalState).value.uint;
+      newLottery.lottery_start_time = getField("START", globalState).value.uint;
     }
 
     if (getField("END", globalState) !== undefined) {
-      lottery_end_time = getField("PLAYERS", globalState).value.uint;
+      newLottery.lottery_end_time = getField("END", globalState).value.uint;
     }
 
     if (getField("PLAYERS", globalState) !== undefined) {
-      total_no_of_players = getField("PLAYERS", globalState).value.uint;
+      newLottery.total_no_of_players = getField(
+        "PLAYERS",
+        globalState
+      ).value.uint;
     }
 
     if (getField("TICKETS", globalState) !== undefined) {
-      total_no_of_tickets = getField("TICKETS", globalState).value.uint;
+      newLottery.total_no_of_tickets = getField(
+        "TICKETS",
+        globalState
+      ).value.uint;
+    }
+
+    if (getField("PRICE", globalState) !== undefined) {
+      newLottery.ticket_price = getField("PRICE", globalState).value.uint;
+    }
+
+    if (getField("POOL", globalState) !== undefined) {
+      newLottery.prize_pool = getField("POOL", globalState).value.uint;
     }
 
     if (getField("STATUS", globalState) !== undefined) {
-      status = getField("STATUS", globalState).value.uint;
+      newLottery.status = getField("STATUS", globalState).value.uint;
     }
 
     if (getField("WINNINGTICKET", globalState) !== undefined) {
-      winning_ticket = getField("WINNINGTICKET", globalState).value.uint;
+      newLottery.winning_ticket = getField(
+        "WINNINGTICKET",
+        globalState
+      ).value.uint;
     }
 
     if (getField("STARTER", globalState) !== undefined) {
       let field = getField("STARTER", globalState).value.bytes;
       if (field) {
-        highest_bidder = algosdk.encodeAddress(Base64.toUint8Array(field));
+        newLottery.starter = algosdk.encodeAddress(Base64.toUint8Array(field));
       }
     }
 
     if (getField("ENDER", globalState) !== undefined) {
       let field = getField("ENDER", globalState).value.bytes;
       if (field) {
-        highest_bidder = algosdk.encodeAddress(Base64.toUint8Array(field));
+        newLottery.ender = algosdk.encodeAddress(Base64.toUint8Array(field));
       }
     }
 
-    if (getField("WINNERREWARD", globalState) !== undefined) {
-      winner_reward = getField("WINNERREWARD", globalState).value.uint;
+    if (getField("WINNER", globalState) !== undefined) {
+      let field = getField("WINNER", globalState).value.bytes;
+      if (field) {
+        newLottery.winner = algosdk.encodeAddress(Base64.toUint8Array(field));
+      }
+    }
+
+    if (getField("NEXTLOTTERY", globalState) !== undefined) {
+      newLottery.next_lottery_fund = getField(
+        "NEXTLOTTERY",
+        globalState
+      ).value.uint;
     }
 
     if (getField("PREVAPP", globalState) !== undefined) {
-      prev_app = getField("AUCTIONEND", globalState).value.uint;
+      newLottery.prev_app = getField("PREVAPP", globalState).value.uint;
     }
 
-    return new Lottery(
-      appId,
-      appAddress,
-      creatorAddress,
-      lottery_duration,
-      lottery_start_time,
-      lottery_end_time,
-      total_no_of_players,
-      total_no_of_tickets,
-      ticket_price,
-      prize_pool,
-      status,
-      winning_ticket,
-      starter,
-      ender,
-      winner_reward,
-      next_lottery_fund,
-      prev_app,
-      user_id,
-      user_no_of_tickets
-    );
+    if (getField("WINNERREWARD", globalState) !== undefined) {
+      newLottery.winner_reward = getField(
+        "WINNERREWARD",
+        globalState
+      ).value.uint;
+    }
+    let userInfo = await algo.indexerClient
+      .lookupAccountAppLocalStates(senderAddress)
+      .do();
+
+    let appLocalState = userInfo["apps-local-states"];
+    for (let i = 0; i < appLocalState.length; i++) {
+      if (appId === appLocalState[i]["id"]) {
+        let localState = appLocalState[i]["key-value"];
+        if (getField("ID", localState) !== undefined) {
+          newLottery.user_id = getField("ID", localState).value.uint;
+        }
+        if (getField("TICKETCOUNT", localState) !== undefined) {
+          newLottery.user_no_of_tickets = getField(
+            "TICKETCOUNT",
+            localState
+          ).value.uint;
+        }
+        if (getField("ISWINNER", localState) !== undefined) {
+          newLottery.user_is_winner = getField(
+            "ISWINNER",
+            localState
+          ).value.uint;
+        }
+      }
+    }
+    return newLottery;
   } catch (err) {
     return null;
   }
 };
 
-//get local state
-const read_local_state = async (senderAddress, appId) => {
-  results = await algo.algodClient
-    .accountApplicationInformation(senderAddress, appId)
-    .do();
-
-  console.log(results);
-  // for local_state in results["apps-local-state"]:
-  //     if local_state["id"] == app_id:
-  //         if "key-value" not in local_state:
-  //             return {}
-  //         return format_state(local_state["key-value"])
-  // return {}
-};
-
-const getField = (fieldName, globalState) => {
-  return globalState.find((state) => {
+const getField = (fieldName, State) => {
+  return State.find((state) => {
     return state.key === utf8ToBase64String(fieldName);
   });
 };
+
+export function checkStatus(status, lotteryEndTime) {
+  const now = new Date();
+  const end = new Date(lotteryEndTime * 1000);
+
+  if (status === 1 && lotteryEndTime !== 0 && now > end) {
+    return "TIME EXHAUSTED, END LOTTERY TO GET LUCKY WINNER";
+  } else {
+    switch (status) {
+      case 0: {
+        return "START LOTTERY";
+      }
+      case 1: {
+        return "LOTTERY IS ACTIVE";
+      }
+      case 2: {
+        return "LOTTERY ENDED";
+      }
+      case 3: {
+        return "WINNERS AWARDED, START NEW LOTTERY";
+      }
+      default: {
+        return "CREATE NEW LOTTERY";
+      }
+    }
+  }
+}

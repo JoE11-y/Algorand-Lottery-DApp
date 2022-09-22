@@ -45,6 +45,7 @@ const App = function AppWrapper() {
     setAddress(null);
     setName(null);
     setBalance(null);
+    window.location.reload();
   };
 
   return (
@@ -66,23 +67,20 @@ const App = function AppWrapper() {
               </Nav.Item>
             </Nav>
             <div className="header">
-              <p className="title light">ALgorand Lottery DApp</p>
+              <p className="title light">Algorand Lottery DApp</p>
               <p className="subtitle light">
                 A lottery platform built on the Algorand Blockchain 🔦
               </p>
             </div>
             {/* display cover */}
           </Container>
-          {/* <main>
-            <Products address={address} fetchBalance={fetchBalance} />
-          </main>
-          <Lottery /> */}
+          <Lottery address={address} fetchBalance={fetchBalance} />
         </>
       ) : (
         // display cover if user is not connected
         <Cover
           name="Algorand Lottery DApp"
-          login={connectWallet}
+          connect={connectWallet}
           coverImg={coverImg}
         />
       )}
