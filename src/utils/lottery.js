@@ -323,43 +323,71 @@ export const endLotteryAction = async (senderAddress, lottery) => {
     accounts: [lottery.starter, senderAddress, lottery.creatorAddress],
   });
 
-  // Create PaymentTxn
-  let paymentTxn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
-    from: senderAddress,
-    to: lottery.appAddress,
-    amount: amount,
-    suggestedParams: params,
-  });
+  // check if lottery is valid
+  if (lottery.total_no_of_players < 2 && lottery.total_no_of_tickets < 5) {
+    // Get transaction ID
+    let txId = appCallTxn.txID().toString();
 
-  let txnArray = [appCallTxn, paymentTxn];
+    // Sign & submit the transaction
+    let signedTxn = await algo.myAlgoConnect.signTransaction(
+      appCallTxn.toByte()
+    );
+    console.log("Signed transaction with txID: %s", txId);
+    await algo.algodClient.sendRawTransaction(signedTxn.blob).do();
 
-  // Create group transaction out of previously build transactions
-  let groupID = algosdk.computeGroupID(txnArray);
-  for (let i = 0; i < 2; i++) txnArray[i].group = groupID;
+    // Wait for transaction to be confirmed
+    const confirmedTxn = await algosdk.waitForConfirmation(
+      algo.algodClient,
+      txId,
+      4
+    );
 
-  // Sign & submit the group transaction
-  let signedTxn = await algo.myAlgoConnect.signTransaction(
-    txnArray.map((txn) => txn.toByte())
-  );
-  console.log("Signed group transaction");
-  let tx = await algo.algodClient
-    .sendRawTransaction(signedTxn.map((txn) => txn.blob))
-    .do();
+    // Get the completed Transaction
+    console.log(
+      "Transaction " +
+        txId +
+        " confirmed in round " +
+        confirmedTxn["confirmed-round"]
+    );
+  } else {
+    // Lottery is valid and Create PaymentTxn
+    let paymentTxn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
+      from: senderAddress,
+      to: lottery.appAddress,
+      amount: amount,
+      suggestedParams: params,
+    });
 
-  // Wait for group transaction to be confirmed
-  let confirmedTxn = await algosdk.waitForConfirmation(
-    algo.algodClient,
-    tx.txId,
-    4
-  );
+    let txnArray = [appCallTxn, paymentTxn];
 
-  // Notify about completion
-  console.log(
-    "Group transaction " +
-      tx.txId +
-      " confirmed in round " +
-      confirmedTxn["confirmed-round"]
-  );
+    // Create group transaction out of previously build transactions
+    let groupID = algosdk.computeGroupID(txnArray);
+    for (let i = 0; i < 2; i++) txnArray[i].group = groupID;
+
+    // Sign & submit the group transaction
+    let signedTxn = await algo.myAlgoConnect.signTransaction(
+      txnArray.map((txn) => txn.toByte())
+    );
+    console.log("Signed group transaction");
+    let tx = await algo.algodClient
+      .sendRawTransaction(signedTxn.map((txn) => txn.blob))
+      .do();
+
+    // Wait for group transaction to be confirmed
+    let confirmedTxn = await algosdk.waitForConfirmation(
+      algo.algodClient,
+      tx.txId,
+      4
+    );
+
+    // Notify about completion
+    console.log(
+      "Group transaction " +
+        tx.txId +
+        " confirmed in round " +
+        confirmedTxn["confirmed-round"]
+    );
+  }
 };
 
 // CHECK IF WINNER: no_op_call

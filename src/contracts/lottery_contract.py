@@ -436,7 +436,6 @@ class Lottery:
         return Seq(
             [
                 # check rekey for both transactions
-                check_rekey_zero(2),
                 Assert(
                     And(
                         # check that user has opted in or that lottery_session is not valid
@@ -446,27 +445,33 @@ class Lottery:
                             App.optedIn(Txn.accounts[0], Txn.applications[0]),
                             lottery_valid == Int(0),
                         ),
-                        # check that the number of transactions within the group transaction is 2.
-                        # because of the payment
-                        Global.group_size() == Int(2),
-                        # check that this transaction is ahead of the payment transaction
-                        Txn.group_index() == Int(0),
-                        # check that the Txn.accounts array
-                        # contains the address of the lottery starter, ender and creator address
-                        Txn.accounts.length() == Int(3),
                         # check to see if lottery session has ended
                         Global.latest_timestamp()
                         > App.globalGet(self.Global_Variables.lottery_end_time),
-                        # checks for second transaction which is to pay 1 algo
-                        Gtxn[1].type_enum() == TxnType.Payment,
-                        Gtxn[1].receiver() == Global.current_application_address(),
-                        Gtxn[1].close_remainder_to() == Global.zero_address(),
-                        Gtxn[1].amount() >= Int(1000000),
                     )
                 ),
                 If(lottery_valid)
                 .Then(
                     Seq(
+                        check_rekey_zero(2),
+                        Assert(
+                            And(
+                                # If lottery is valid, check that the payment transaction is attached to the noOp transaction
+                                # check that the number of transactions within the group transaction is 2.
+                                Global.group_size() == Int(2),
+                                # check that this transaction is ahead of the payment transaction
+                                Txn.group_index() == Int(0),
+                                # check that the Txn.accounts array
+                                # contains the address of the lottery starter, ender and creator address
+                                Txn.accounts.length() == Int(3),
+                                # checks for second transaction which is to pay 1 algo
+                                Gtxn[1].type_enum() == TxnType.Payment,
+                                Gtxn[1].receiver()
+                                == Global.current_application_address(),
+                                Gtxn[1].close_remainder_to() == Global.zero_address(),
+                                Gtxn[1].amount() >= Int(1000000),
+                            )
+                        ),
                         # get random number,
                         self.get_rand_number(),
                         # get and store winning Ticket
@@ -497,6 +502,7 @@ class Lottery:
                     )
                 )
                 .Else(
+                    check_rekey_zero(1),
                     Seq(
                         # Reset the lottery time
                         lottery_duration.store(
@@ -506,7 +512,7 @@ class Lottery:
                             self.Global_Variables.lottery_end_time,
                             (Global.latest_timestamp() + lottery_duration.load()),
                         ),
-                    )
+                    ),
                 ),
                 Approve(),
             ]

@@ -154,14 +154,6 @@ int 2
 store 18
 b main_l12
 main_l18:
-gtxn 0 RekeyTo
-global ZeroAddress
-==
-gtxn 1 RekeyTo
-global ZeroAddress
-==
-&&
-assert
 txna Accounts 0
 txna Applications 0
 app_opted_in
@@ -177,10 +169,49 @@ int 2
 int 0
 ==
 ||
+global LatestTimestamp
+byte "END"
+app_global_get
+>
+&&
+assert
+byte "TICKETS"
+app_global_get
+int 5
+>=
+byte "PLAYERS"
+app_global_get
+int 2
+>=
+&&
+bnz main_l21
+gtxn 0 RekeyTo
+global ZeroAddress
+==
+assert
+byte "DURATION"
+app_global_get
+store 12
+byte "END"
+global LatestTimestamp
+load 12
++
+app_global_put
+main_l20:
+int 1
+return
+main_l21:
+gtxn 0 RekeyTo
+global ZeroAddress
+==
+gtxn 1 RekeyTo
+global ZeroAddress
+==
+&&
+assert
 global GroupSize
 int 2
 ==
-&&
 txn GroupIndex
 int 0
 ==
@@ -188,11 +219,6 @@ int 0
 txn NumAccounts
 int 3
 ==
-&&
-global LatestTimestamp
-byte "END"
-app_global_get
->
 &&
 gtxn 1 TypeEnum
 int pay
@@ -211,28 +237,6 @@ int 1000000
 >=
 &&
 assert
-byte "TICKETS"
-app_global_get
-int 5
->=
-byte "PLAYERS"
-app_global_get
-int 2
->=
-&&
-bnz main_l21
-byte "DURATION"
-app_global_get
-store 12
-byte "END"
-global LatestTimestamp
-load 12
-+
-app_global_put
-main_l20:
-int 1
-return
-main_l21:
 byte "x"
 byte "a"
 app_global_get
