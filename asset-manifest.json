@@ -1,27 +1,27 @@
 {
   "files": {
     "main.css": "/Algorand-Lottery-DApp/static/css/main.900a919d.chunk.css",
-    "main.js": "/Algorand-Lottery-DApp/static/js/main.ba2d3320.chunk.js",
-    "main.js.map": "/Algorand-Lottery-DApp/static/js/main.ba2d3320.chunk.js.map",
+    "main.js": "/Algorand-Lottery-DApp/static/js/main.553b3a84.chunk.js",
+    "main.js.map": "/Algorand-Lottery-DApp/static/js/main.553b3a84.chunk.js.map",
     "runtime-main.js": "/Algorand-Lottery-DApp/static/js/runtime-main.8e64d8b5.js",
     "runtime-main.js.map": "/Algorand-Lottery-DApp/static/js/runtime-main.8e64d8b5.js.map",
     "static/css/2.1fbe4b0b.chunk.css": "/Algorand-Lottery-DApp/static/css/2.1fbe4b0b.chunk.css",
-    "static/js/2.8472fe69.chunk.js": "/Algorand-Lottery-DApp/static/js/2.8472fe69.chunk.js",
-    "static/js/2.8472fe69.chunk.js.map": "/Algorand-Lottery-DApp/static/js/2.8472fe69.chunk.js.map",
+    "static/js/2.3fe01214.chunk.js": "/Algorand-Lottery-DApp/static/js/2.3fe01214.chunk.js",
+    "static/js/2.3fe01214.chunk.js.map": "/Algorand-Lottery-DApp/static/js/2.3fe01214.chunk.js.map",
     "static/js/3.58b2153a.chunk.js": "/Algorand-Lottery-DApp/static/js/3.58b2153a.chunk.js",
     "static/js/3.58b2153a.chunk.js.map": "/Algorand-Lottery-DApp/static/js/3.58b2153a.chunk.js.map",
     "index.html": "/Algorand-Lottery-DApp/index.html",
     "static/css/2.1fbe4b0b.chunk.css.map": "/Algorand-Lottery-DApp/static/css/2.1fbe4b0b.chunk.css.map",
     "static/css/main.900a919d.chunk.css.map": "/Algorand-Lottery-DApp/static/css/main.900a919d.chunk.css.map",
-    "static/js/2.8472fe69.chunk.js.LICENSE.txt": "/Algorand-Lottery-DApp/static/js/2.8472fe69.chunk.js.LICENSE.txt",
+    "static/js/2.3fe01214.chunk.js.LICENSE.txt": "/Algorand-Lottery-DApp/static/js/2.3fe01214.chunk.js.LICENSE.txt",
     "static/media/balls.d5e927bd.png": "/Algorand-Lottery-DApp/static/media/balls.d5e927bd.png",
     "static/media/bootstrap-icons.css": "/Algorand-Lottery-DApp/static/media/bootstrap-icons.c1d7432e.woff"
   },
   "entrypoints": [
     "static/js/runtime-main.8e64d8b5.js",
     "static/css/2.1fbe4b0b.chunk.css",
-    "static/js/2.8472fe69.chunk.js",
+    "static/js/2.3fe01214.chunk.js",
     "static/css/main.900a919d.chunk.css",
-    "static/js/main.ba2d3320.chunk.js"
+    "static/js/main.553b3a84.chunk.js"
   ]
 }
