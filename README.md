@@ -9,7 +9,7 @@
  
 A simple lottery contract that awards a lucky winner with a half of the generated prizepot.
 
-The Lottery is not controlled by anyone as everyone who has opted in can start and end the lottery, within is allocated time.
+The Lottery is controlled by anyone as everyone who has opted in can start and end the lottery, within is allocated time.
 
 [link to dapp](https://JoE11-y.github.io/Algorand-Lottery-DApp)
 
