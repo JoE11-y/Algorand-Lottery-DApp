@@ -1,8 +1,8 @@
 {
   "files": {
     "main.css": "/Algorand-Lottery-DApp/static/css/main.900a919d.chunk.css",
-    "main.js": "/Algorand-Lottery-DApp/static/js/main.afc80a69.chunk.js",
-    "main.js.map": "/Algorand-Lottery-DApp/static/js/main.afc80a69.chunk.js.map",
+    "main.js": "/Algorand-Lottery-DApp/static/js/main.5c75c58f.chunk.js",
+    "main.js.map": "/Algorand-Lottery-DApp/static/js/main.5c75c58f.chunk.js.map",
     "runtime-main.js": "/Algorand-Lottery-DApp/static/js/runtime-main.8e64d8b5.js",
     "runtime-main.js.map": "/Algorand-Lottery-DApp/static/js/runtime-main.8e64d8b5.js.map",
     "static/css/2.1fbe4b0b.chunk.css": "/Algorand-Lottery-DApp/static/css/2.1fbe4b0b.chunk.css",
@@ -22,6 +22,6 @@
     "static/css/2.1fbe4b0b.chunk.css",
     "static/js/2.3fe01214.chunk.js",
     "static/css/main.900a919d.chunk.css",
-    "static/js/main.afc80a69.chunk.js"
+    "static/js/main.5c75c58f.chunk.js"
   ]
 }
