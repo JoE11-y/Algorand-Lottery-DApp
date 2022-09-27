@@ -2,27 +2,27 @@
 txn ApplicationID
 int 0
 ==
-bnz main_l35
+bnz main_l34
 txn OnCompletion
 int DeleteApplication
 ==
-bnz main_l34
+bnz main_l33
 txn OnCompletion
 int OptIn
 ==
-bnz main_l33
+bnz main_l32
 txna ApplicationArgs 0
 byte "start"
 ==
-bnz main_l26
+bnz main_l25
 txna ApplicationArgs 0
 byte "buy"
 ==
-bnz main_l22
+bnz main_l19
 txna ApplicationArgs 0
 byte "end"
 ==
-bnz main_l18
+bnz main_l15
 txna ApplicationArgs 0
 byte "check"
 ==
@@ -54,16 +54,16 @@ int 1000000
 assert
 byte "POOL"
 app_global_get
-store 20
+store 21
 byte "NEXTLOTTERY"
 app_global_get
-store 21
+store 22
 txna Accounts 1
-load 21
-callsub sendfunds_0
+load 22
+callsub sendfunds_1
 byte "POOL"
-load 20
 load 21
+load 22
 -
 app_global_put
 byte "STATUS"
@@ -92,68 +92,77 @@ int 0
 ==
 &&
 assert
-txna Accounts 0
-byte "TICKETCOUNT"
-app_local_get
-store 15
 byte "WINNINGTICKET"
 app_global_get
-store 16
-int 1
-store 18
+store 4
+load 4
+int 1000
+/
+store 0
+load 4
+int 1000
+%
+int 8
+/
+store 2
+load 4
+int 1000
+%
+int 8
+%
+store 3
+load 0
+callsub convertuinttobytes_0
+store 1
 txna Accounts 0
-byte "TICKETS"
-app_local_get
-store 13
-int 0
-store 19
-main_l11:
-load 19
-load 15
-<
-bnz main_l15
-main_l12:
-load 18
-int 2
-==
+txna Applications 0
+load 1
+app_local_get_ex
+store 6
+store 5
+load 6
+!
 bnz main_l14
-main_l13:
+main_l11:
+txna Accounts 0
+load 1
+app_local_get
+load 2
+getbyte
+load 3
+getbit
+store 19
+load 19
+int 1
+==
+bnz main_l13
+main_l12:
 txna Accounts 0
 byte "ISWINNER"
-load 18
-app_local_put
-int 1
-return
-main_l14:
-byte "WINNERREWARD"
-app_global_get
-store 17
-txna Accounts 0
-load 17
-callsub sendfunds_0
-byte "WINNER"
-txn Sender
-app_global_put
-b main_l13
-main_l15:
-load 13
-load 19
-getbyte
-store 14
-load 16
-load 14
-==
-bnz main_l17
 load 19
 int 1
 +
-store 19
-b main_l11
-main_l17:
-int 2
-store 18
+app_local_put
+int 1
+return
+main_l13:
+byte "WINNERREWARD"
+app_global_get
+store 20
+txna Accounts 0
+load 20
+callsub sendfunds_1
+byte "WINNER"
+txn Sender
+app_global_put
 b main_l12
-main_l18:
+main_l14:
+txna Accounts 0
+load 1
+byte 0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+app_local_put
+b main_l11
+main_l15:
 txna Accounts 0
 txna Applications 0
 app_opted_in
@@ -184,23 +193,23 @@ app_global_get
 int 2
 >=
 &&
-bnz main_l21
+bnz main_l18
 gtxn 0 RekeyTo
 global ZeroAddress
 ==
 assert
 byte "DURATION"
 app_global_get
-store 12
+store 18
 byte "END"
 global LatestTimestamp
-load 12
+load 18
 +
 app_global_put
-main_l20:
+main_l17:
 int 1
 return
-main_l21:
+main_l18:
 gtxn 0 RekeyTo
 global ZeroAddress
 ==
@@ -263,7 +272,7 @@ int 5
 *
 int 100
 /
-store 10
+store 16
 byte "WINNERREWARD"
 byte "POOL"
 app_global_get
@@ -281,20 +290,20 @@ int 100
 /
 app_global_put
 txna Accounts 1
-load 10
-callsub sendfunds_0
+load 16
+callsub sendfunds_1
 txna Accounts 2
-load 10
-callsub sendfunds_0
+load 16
+callsub sendfunds_1
 txna Accounts 3
-load 10
-callsub sendfunds_0
+load 16
+callsub sendfunds_1
 byte "POOL"
 app_global_get
-store 11
+store 17
 byte "POOL"
-load 11
-load 10
+load 17
+load 16
 int 3
 *
 -
@@ -302,8 +311,8 @@ app_global_put
 byte "STATUS"
 int 2
 app_global_put
-b main_l20
-main_l22:
+b main_l17
+main_l19:
 gtxn 0 RekeyTo
 global ZeroAddress
 ==
@@ -340,8 +349,13 @@ int 1
 txna Accounts 0
 byte "TICKETCOUNT"
 app_local_get
-int 100
+int 1000
 <=
+&&
+byte "TICKETS"
+app_global_get
+int 13000
+<
 &&
 txna ApplicationArgs 1
 btoi
@@ -375,27 +389,38 @@ gtxn 0 Sender
 assert
 byte "TICKETS"
 app_global_get
-store 5
-load 5
+store 12
+load 12
 txna ApplicationArgs 1
 btoi
 +
-store 6
-load 5
-store 9
-main_l23:
-load 9
-load 6
+store 13
+txna Accounts 0
+byte "TICKETCOUNT"
+app_local_get
+store 14
+load 12
+store 4
+main_l20:
+load 4
+load 13
 <
-bnz main_l25
+bnz main_l22
+txna Accounts 0
+byte "TICKETCOUNT"
+load 14
+txna ApplicationArgs 1
+btoi
++
+app_local_put
 byte "TICKETS"
-load 6
+load 13
 app_global_put
 byte "POOL"
 app_global_get
-store 7
+store 15
 byte "POOL"
-load 7
+load 15
 gtxn 1 Amount
 +
 app_global_put
@@ -414,32 +439,64 @@ app_global_get
 app_global_put
 int 1
 return
-main_l25:
+main_l22:
+load 4
+int 1000
+/
+store 0
+load 4
+int 1000
+%
+int 8
+/
+store 2
+load 4
+int 1000
+%
+int 8
+%
+store 3
+load 0
+callsub convertuinttobytes_0
+store 1
 txna Accounts 0
-byte "TICKETCOUNT"
+txna Applications 0
+load 1
+app_local_get_ex
+store 6
+store 5
+load 6
+!
+bnz main_l24
+main_l23:
+txna Accounts 0
+load 1
+txna Accounts 0
+load 1
 app_local_get
-store 8
+load 2
 txna Accounts 0
-byte "TICKETS"
-txna Accounts 0
-byte "TICKETS"
+load 1
 app_local_get
-load 8
-load 9
+load 2
+getbyte
+load 3
+int 1
+setbit
 setbyte
 app_local_put
+load 4
+int 1
++
+store 4
+b main_l20
+main_l24:
 txna Accounts 0
-byte "TICKETCOUNT"
-load 8
-int 1
-+
+load 1
+byte 0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 app_local_put
-load 9
-int 1
-+
-store 9
 b main_l23
-main_l26:
+main_l25:
 gtxn 0 RekeyTo
 global ZeroAddress
 ==
@@ -504,11 +561,11 @@ byte "PREVAPP"
 app_global_get
 ==
 &&
-bnz main_l28
-main_l27:
+bnz main_l27
+main_l26:
 int 1
 return
-main_l28:
+main_l27:
 txn Fee
 global MinTxnFee
 int 2
@@ -518,11 +575,11 @@ assert
 txna Applications 1
 byte "x"
 app_global_get_ex
-store 2
-store 1
-load 2
-bnz main_l32
-main_l29:
+store 9
+store 8
+load 9
+bnz main_l31
+main_l28:
 itxn_begin
 int appl
 itxn_field TypeEnum
@@ -540,25 +597,25 @@ itxn_submit
 txna Applications 1
 byte "NEXTLOTTERY"
 app_global_get_ex
-store 4
-store 3
-load 4
-bnz main_l31
+store 11
+store 10
+load 11
+bnz main_l30
 byte "POOL"
 int 0
 app_global_put
-b main_l27
-main_l31:
+b main_l26
+main_l30:
 byte "POOL"
-load 3
+load 10
 app_global_put
-b main_l27
-main_l32:
+b main_l26
+main_l31:
 byte "x"
-load 1
+load 8
 app_global_put
-b main_l29
-main_l33:
+b main_l28
+main_l32:
 global LatestTimestamp
 byte "END"
 app_global_get
@@ -568,18 +625,23 @@ app_global_get
 int 1
 ==
 &&
+byte "TICKETS"
+app_global_get
+int 13000
+<
+&&
 assert
 byte "PLAYERS"
 app_global_get
-store 0
+store 7
 txna Accounts 0
 byte "ID"
-load 0
+load 7
 int 1
 +
 app_local_put
 byte "PLAYERS"
-load 0
+load 7
 int 1
 +
 app_global_put
@@ -588,16 +650,12 @@ byte "TICKETCOUNT"
 int 0
 app_local_put
 txna Accounts 0
-byte "TICKETS"
-byte 0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-app_local_put
-txna Accounts 0
 byte "ISWINNER"
 int 0
 app_local_put
 int 1
 return
-main_l34:
+main_l33:
 txn Sender
 global CreatorAddress
 ==
@@ -612,13 +670,13 @@ int 3
 ||
 &&
 return
-main_l35:
+main_l34:
 gtxn 0 RekeyTo
 global ZeroAddress
 ==
 assert
 txn Note
-byte "algorandlottery:uv1"
+byte "algorandlottery:uv2"
 ==
 txn NumAppArgs
 int 2
@@ -677,16 +735,58 @@ app_global_put
 int 1
 return
 
-// send_funds
-sendfunds_0:
+// convert_uint_to_bytes
+convertuinttobytes_0:
 store 23
-store 22
+load 23
+int 0
+==
+bnz convertuinttobytes_0_l5
+byte ""
+store 24
+load 23
+store 25
+convertuinttobytes_0_l2:
+load 25
+int 0
+>
+bnz convertuinttobytes_0_l4
+load 24
+b convertuinttobytes_0_l6
+convertuinttobytes_0_l4:
+load 25
+int 10
+%
+store 26
+byte "0123456789"
+load 26
+load 26
+int 1
++
+substring3
+load 24
+concat
+store 24
+load 25
+int 10
+/
+store 25
+b convertuinttobytes_0_l2
+convertuinttobytes_0_l5:
+byte "0"
+convertuinttobytes_0_l6:
+retsub
+
+// send_funds
+sendfunds_1:
+store 28
+store 27
 itxn_begin
 int pay
 itxn_field TypeEnum
-load 22
+load 27
 itxn_field Receiver
-load 23
+load 28
 itxn_field Amount
 itxn_submit
 retsub

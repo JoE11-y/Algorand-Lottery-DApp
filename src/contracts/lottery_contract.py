@@ -1,18 +1,5 @@
 from pyteal import *
-
-
-#  verify that the RekeyTo property of any transaction is set to the ZeroAddress
-def check_rekey_zero(
-    num_transactions: int,
-):
-    return Assert(
-        And(
-            *[
-                Gtxn[i].rekey_to() == Global.zero_address()
-                for i in range(num_transactions)
-            ]
-        )
-    )
+from util import *
 
 
 class Lottery:
@@ -29,7 +16,7 @@ class Lottery:
         # (0 not started, 1 started, 2 ended, 3 next lottery funds sent) // uint64
         status = Bytes("STATUS")
 
-        winningTicket = Bytes("WINNINGTICKET")  # Winning Ticket ID // uint64
+        winning_ticket = Bytes("WINNINGTICKET")  # Winning Ticket ID // uint64
         starter = Bytes("STARTER")  # Lottery starter address // Bytes
         ender = Bytes("ENDER")  # Lottery ender address // Bytes
 
@@ -50,13 +37,23 @@ class Lottery:
         modulus = Bytes("m")  # // uint64
         seed = Bytes("x")  # // uint64
 
-    class Local_Variables:  # Total of 3 local ints, 1 local bytes
+    class Local_Variables:  # Total of 3 local ints, 13 local bytes
         id = Bytes("ID")  # user Id // uint64
         no_of_tickets = Bytes("TICKETCOUNT")  # no of tickets bought // uint64
-        ticketArray = Bytes("TICKETS")  # tickets position array // Bytes
+
+        # each ticket array can store up to 1000 tickets positions, hence we have a possible size of 13000 buyable tickets positions for each Lottery.
+        # but each player is capped at 1000 tickets.
+
+        # tickets position array for ticket numbers (0 - 999) is stored in Bytes("0")
+        # tickets position array for ticket numbers (1000 - 1999) is stored in  Bytes("1")
+        # tickets position array for ticket numbers (2000 - 2999) is stored in  Bytes("2")
+        # ..
+        # ..
+        # ..
+        # tickets position array for ticket numbers (12000 - 12999) is stored in Bytes("12")
 
         # if user is winner (2) or not (1) // uint64
-        isWinner = Bytes("ISWINNER")
+        is_winner = Bytes("ISWINNER")
 
     class AppMethods:
         start_lottery = Bytes("start")
@@ -65,25 +62,8 @@ class Lottery:
         check_if_winner = Bytes("check")
         fund_next_lottery = Bytes("fund")
 
-    @Subroutine(TealType.uint64)
-    def prev_lottery_status(prev_lottery: Expr):
-        state = App.globalGetEx(prev_lottery, Bytes("STATUS"))
-
-        stored_state = ScratchVar(TealType.uint64)
-
-        return Seq(
-            state,
-            If(
-                state.hasValue(),
-                stored_state.store(state.value()),
-                stored_state.store(Int(0)),
-            ),
-            Return(stored_state.load()),
-        )
-
     def create_new_lottery(self):
         # no of params lotteryInterval, ticketPrice
-        prev_app_status = self.prev_lottery_status(Txn.applications[1])
         return Seq(
             [
                 # check rekey for both transactions
@@ -91,7 +71,7 @@ class Lottery:
                 Assert(
                     And(
                         # check note attached is valid
-                        Txn.note() == Bytes("algorandlottery:uv1"),
+                        Txn.note() == Bytes("algorandlottery:uv2"),
                         # check the number of arguments passed is 2, lotteryDuration, ticketPrice
                         Txn.application_args.length() == Int(2),
                         # check that the duration is greater than 0
@@ -150,7 +130,7 @@ class Lottery:
                     TxnField.type_enum: TxnType.ApplicationCall,
                     TxnField.application_id: prev_lottery,
                     TxnField.on_completion: OnComplete.NoOp,
-                    TxnField.application_args: [Bytes("fund")],
+                    TxnField.application_args: [self.AppMethods.fund_next_lottery],
                     TxnField.accounts: [Global.current_application_address()],
                     TxnField.fee: Int(0),
                 }
@@ -237,6 +217,7 @@ class Lottery:
         )
 
     # opt in function
+
     def join_lottery(self):
         no_of_players = ScratchVar(TealType.uint64)
 
@@ -249,6 +230,9 @@ class Lottery:
                         < App.globalGet(self.Global_Variables.lottery_end_time),
                         # check lottery status
                         App.globalGet(self.Global_Variables.status) == Int(1),
+                        # check if ticket's space hasn't been exhausted
+                        App.globalGet(self.Global_Variables.total_no_of_tickets)
+                        < Int(13000),
                     )
                 ),
                 no_of_players.store(
@@ -264,21 +248,12 @@ class Lottery:
                     self.Global_Variables.total_no_of_players,
                     (no_of_players.load() + Int(1)),
                 ),
-                # initialize tickets as 0
+                # initialize ticket count as 0
                 App.localPut(
                     Txn.accounts[0], self.Local_Variables.no_of_tickets, Int(0)
                 ),
-                # creates byte array that can store up to 100 bytes (100 tickets)
-                App.localPut(
-                    Txn.accounts[0],
-                    self.Local_Variables.ticketArray,
-                    Bytes(
-                        "base16",
-                        "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-                    ),
-                ),
-                # initialize isWinner as 0
-                App.localPut(Txn.accounts[0], self.Local_Variables.isWinner, Int(0)),
+                # initialize is winner as 0
+                App.localPut(Txn.accounts[0], self.Local_Variables.is_winner, Int(0)),
                 Approve(),
             ]
         )
@@ -298,13 +273,10 @@ class Lottery:
         # arguments, arg 0 is buy tag, second arg is the amount of tickets
         old_total_tickets = ScratchVar(TealType.uint64)
         new_total_tickets = ScratchVar(TealType.uint64)
+        player_existing_ticket_count = ScratchVar(TealType.uint64)
         prizepool = ScratchVar(TealType.uint64)
         no_of_tickets = Txn.application_args[1]
-        user_ticket_array = App.localGet(
-            Txn.accounts[0], self.Local_Variables.ticketArray
-        )
-        user_existing_ticket_count = ScratchVar(TealType.uint64)
-        i = ScratchVar(TealType.uint64)
+
         return Seq(
             [
                 # check rekey for both transactions
@@ -327,12 +299,15 @@ class Lottery:
                         < App.globalGet(self.Global_Variables.lottery_end_time),
                         # check lottery status
                         App.globalGet(self.Global_Variables.status) == Int(1),
-                        # check that user hasn't bought more than 100 tickets
+                        # check that user hasn't bought more than 1000 tickets
                         App.localGet(
                             Txn.accounts[0], self.Local_Variables.no_of_tickets
                         )
-                        <= Int(100),
-                        # check that the amount of tickets to be bought is less than or equal to 100 tickets. Max per user
+                        <= Int(1000),
+                        # check if ticket's space hasn't been exhausted
+                        App.globalGet(self.Global_Variables.total_no_of_tickets)
+                        < Int(13000),
+                        # check that the amount of tickets to be bought is less than or equal to 100 tickets. Max at a time
                         Btoi(no_of_tickets) <= Int(100),
                         # checks for the payment transaction
                         Gtxn[1].type_enum() == TxnType.Payment,
@@ -348,33 +323,49 @@ class Lottery:
                     App.globalGet(self.Global_Variables.total_no_of_tickets)
                 ),
                 new_total_tickets.store(old_total_tickets.load() + Btoi(no_of_tickets)),
+                # get the existing user ticket count
+                player_existing_ticket_count.store(
+                    App.localGet(Txn.accounts[0], self.Local_Variables.no_of_tickets)
+                ),
+                # Loop to update users ticket
                 For(
-                    i.store(old_total_tickets.load()),
-                    i.load() < new_total_tickets.load(),
-                    i.store(i.load() + Int(1)),
+                    Ticket.ticket_posn.store(old_total_tickets.load()),
+                    Ticket.ticket_posn.load() < new_total_tickets.load(),
+                    Ticket.ticket_posn.store(Ticket.ticket_posn.load() + Int(1)),
                 ).Do(
-                    # get the existing user ticket count
-                    user_existing_ticket_count.store(
-                        App.localGet(
-                            Txn.accounts[0], self.Local_Variables.no_of_tickets
-                        )
+                    # get array key, ticket byte position and ticket bit position
+                    Ticket.store_key_byte_bit,
+                    # convert array key to string
+                    Ticket.ticket_array_key_as_string.store(
+                        convert_uint_to_bytes(Ticket.ticket_array_key.load())
                     ),
-                    # update the array, with index position and ticket number
+                    # check if array key already exists
+                    Ticket.ticket_array_key_has_value,
+                    # get array
+                    Ticket.initialise_array,
+                    # fill ticket position for player
                     App.localPut(
                         Txn.accounts[0],
-                        self.Local_Variables.ticketArray,
+                        Ticket.ticket_array_key_as_string.load(),
                         SetByte(
-                            user_ticket_array,
-                            user_existing_ticket_count.load(),
-                            i.load(),
+                            Ticket.curr_ticket_array,
+                            Ticket.ticket_byte_posn.load(),
+                            SetBit(
+                                GetByte(
+                                    Ticket.curr_ticket_array,
+                                    Ticket.ticket_byte_posn.load(),
+                                ),
+                                Ticket.ticket_bit_posn.load(),
+                                Int(1),
+                            ),
                         ),
                     ),
-                    # update user existing ticket count
-                    App.localPut(
-                        Txn.accounts[0],
-                        self.Local_Variables.no_of_tickets,
-                        (user_existing_ticket_count.load() + Int(1)),
-                    ),
+                ),
+                # update player existing ticket count
+                App.localPut(
+                    Txn.accounts[0],
+                    self.Local_Variables.no_of_tickets,
+                    (player_existing_ticket_count.load() + Btoi(no_of_tickets)),
                 ),
                 # update the total amount of tickets
                 App.globalPut(
@@ -390,20 +381,6 @@ class Lottery:
                 self.get_rand_number(),
                 Approve(),
             ]
-        )
-
-    @Subroutine(TealType.none)
-    def send_funds(account: Expr, amount: Expr):
-        return Seq(
-            InnerTxnBuilder.Begin(),
-            InnerTxnBuilder.SetFields(
-                {
-                    TxnField.type_enum: TxnType.Payment,
-                    TxnField.receiver: account,
-                    TxnField.amount: amount,
-                }
-            ),
-            InnerTxnBuilder.Submit(),
         )
 
     def end_lottery(self):
@@ -475,7 +452,7 @@ class Lottery:
                         # get random number,
                         self.get_rand_number(),
                         # get and store winning Ticket
-                        App.globalPut(self.Global_Variables.winningTicket, win_ticket),
+                        App.globalPut(self.Global_Variables.winning_ticket, win_ticket),
                         # calculate rewards
                         rewards.store(calc_starter_n_ender_n_creator_rewards),
                         App.globalPut(
@@ -486,9 +463,9 @@ class Lottery:
                             calc_next_lottery_fund,
                         ),
                         # send funds to starter, ender and creator address
-                        self.send_funds(Txn.accounts[1], rewards.load()),
-                        self.send_funds(Txn.accounts[2], rewards.load()),
-                        self.send_funds(Txn.accounts[3], rewards.load()),
+                        send_funds(Txn.accounts[1], rewards.load()),
+                        send_funds(Txn.accounts[2], rewards.load()),
+                        send_funds(Txn.accounts[3], rewards.load()),
                         # update amount in prizepool after removing the ender and starter rewards
                         prize_pool_amount.store(
                             App.globalGet(self.Global_Variables.prizepool)
@@ -519,13 +496,10 @@ class Lottery:
         )
 
     def check_if_winner(self):
-        ticket_array_stored = ScratchVar(TealType.bytes)
-        ticket = ScratchVar(TealType.uint64)
-        user_ticket_count = ScratchVar(TealType.uint64)
-        winning_ticket = ScratchVar(TealType.uint64)
+
+        is_winner = ScratchVar(TealType.uint64)
         winners_reward = ScratchVar(TealType.uint64)
-        isWinner = ScratchVar(TealType.uint64)
-        i = ScratchVar(TealType.uint64)
+
         return Seq(
             [
                 Assert(
@@ -540,46 +514,49 @@ class Lottery:
                         # check to see if lottery status has been set to 2, meaning lottery ended
                         App.globalGet(self.Global_Variables.status) == Int(2),
                         # check that user hasn't entered this function already
-                        App.localGet(Txn.accounts[0], self.Local_Variables.isWinner)
+                        App.localGet(Txn.accounts[0], self.Local_Variables.is_winner)
                         == Int(0),
                     )
                 ),
-                user_ticket_count.store(
-                    App.localGet(Txn.accounts[0], self.Local_Variables.no_of_tickets)
+                # store winning ticket position
+                Ticket.ticket_posn.store(
+                    App.globalGet(self.Global_Variables.winning_ticket)
                 ),
-                winning_ticket.store(
-                    App.globalGet(self.Global_Variables.winningTicket)
+                # get ticket array key, ticket byte position and ticket bit position of winning ticket position
+                Ticket.store_key_byte_bit,
+                # convert to string
+                Ticket.ticket_array_key_as_string.store(
+                    convert_uint_to_bytes(Ticket.ticket_array_key.load())
                 ),
-                isWinner.store(Int(1)),
-                ticket_array_stored.store(
-                    App.localGet(Txn.accounts[0], self.Local_Variables.ticketArray)
+                # check if ticket array for user already exists
+                Ticket.ticket_array_key_has_value,
+                # get array
+                Ticket.initialise_array,
+                # check if winning ticket exists on player's records
+                is_winner.store(
+                    GetBit(
+                        GetByte(
+                            Ticket.curr_ticket_array, Ticket.ticket_byte_posn.load()
+                        ),
+                        Ticket.ticket_bit_posn.load(),
+                    )
                 ),
-                For(
-                    i.store(Int(0)),
-                    i.load() < user_ticket_count.load(),
-                    i.store(i.load() + Int(1)),
-                ).Do(
-                    # get the ticket id
-                    ticket.store(GetByte(ticket_array_stored.load(), i.load())),
-                    # check if it's equal to the winning ticket id
-                    If(winning_ticket.load() == ticket.load()).Then(
-                        Seq(isWinner.store(Int(2)), Break())
-                    ),
-                ),
-                If(isWinner.load() == Int(2)).Then(
+                If(is_winner.load() == Int(1)).Then(
                     Seq(
                         winners_reward.store(
                             App.globalGet(self.Global_Variables.winner_reward)
                         ),
                         # send the reward
-                        self.send_funds(Txn.accounts[0], winners_reward.load()),
+                        send_funds(Txn.accounts[0], winners_reward.load()),
                         # store winners address
                         App.globalPut(self.Global_Variables.winner, Txn.sender()),
                     )
                 ),
                 # update local variables
                 App.localPut(
-                    Txn.accounts[0], self.Local_Variables.isWinner, isWinner.load()
+                    Txn.accounts[0],
+                    self.Local_Variables.is_winner,
+                    is_winner.load() + Int(1),
                 ),
                 Approve(),
             ]
@@ -607,7 +584,7 @@ class Lottery:
                     App.globalGet(self.Global_Variables.next_lottery_fund)
                 ),
                 # send the funds
-                self.send_funds(Txn.accounts[1], next_lottery_fund.load()),
+                send_funds(Txn.accounts[1], next_lottery_fund.load()),
                 # Update amount in lottery after sending next lottery fun
                 App.globalPut(
                     self.Global_Variables.prizepool,

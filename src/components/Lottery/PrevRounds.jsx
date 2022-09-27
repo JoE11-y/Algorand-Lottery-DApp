@@ -29,7 +29,7 @@ const PrevRounds = ({ Lotteries, checkIfWinner }) => {
     setLoading(true);
     e.preventDefault();
     let newPosition = position + 1;
-    if (newPosition >= Lotteries.length) {
+    if (newPosition >= Lotteries.length - 1) {
       setLoading(false);
       return;
     }

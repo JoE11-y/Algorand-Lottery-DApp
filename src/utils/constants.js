@@ -31,12 +31,12 @@ export const myAlgoConnect = new MyAlgoConnect();
 export const minRound = 21540981;
 
 // https://github.com/algorandfoundation/ARCs/blob/main/ARCs/arc-0002.md
-export const lotteryNote = "algorandlottery:uv1";
+export const lotteryNote = "lottery:uv5";
 
 // Maximum local storage allocation, immutable
 export const numLocalInts = 3;
 // Local variables stored as Int: id, no_of_ticket, winnerstatus
-export const numLocalBytes = 1;
+export const numLocalBytes = 13;
 // Local variables stored as Bytes: Ticket array
 
 // Maximum global storage allocation, immutable
