@@ -14,31 +14,34 @@ const App = function AppWrapper() {
   const [balance, setBalance] = useState(0);
 
   const fetchBalance = async (accountAddress) => {
-    indexerClient
-      .lookupAccountByID(accountAddress)
-      .do()
-      .then((response) => {
-        const _balance = response.account.amount;
-        setBalance(_balance);
-      })
-      .catch((error) => {
-        console.log(error);
-      });
+      try {
+          const response = await indexerClient
+              .lookupAccountByID(accountAddress)
+              .do()
+          if (!response) return
+          const _balance = response.account.amount;
+          setBalance(_balance);
+
+      } catch (error) {
+          console.log(error);
+      }
+
   };
 
   const connectWallet = async () => {
-    myAlgoConnect
-      .connect()
-      .then((accounts) => {
-        const _account = accounts[0];
-        setAddress(_account.address);
-        setName(_account.name);
-        fetchBalance(_account.address);
-      })
-      .catch((error) => {
-        console.log("Could not connect to MyAlgo wallet");
-        console.error(error);
-      });
+      try {
+          const accounts = await myAlgoConnect
+              .connect()
+          if(!accounts) return
+          const _account = accounts[0];
+          setAddress(_account.address);
+          setName(_account.name);
+          fetchBalance(_account.address);
+      } catch (error) {
+          console.log("Could not connect to MyAlgo wallet");
+          console.error(error);
+      }
+
   };
 
   const disconnect = () => {

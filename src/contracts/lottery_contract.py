@@ -75,7 +75,7 @@ class Lottery:
                         # check the number of arguments passed is 2, lotteryDuration, ticketPrice
                         Txn.application_args.length() == Int(2),
                         # check that the duration is greater than 0
-                        Btoi(Txn.application_args[0]) != Int(0),
+                        Btoi(Txn.application_args[0]) > Int(0),
                         # check that the ticketPrice is greater than 0
                         Btoi(Txn.application_args[1]) > Int(0),
                         Txn.applications.length() == Int(1),

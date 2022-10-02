@@ -49,36 +49,35 @@ const Lottery = ({ address, fetchBalance }) => {
 
   //  function to create Lottery
   const createNewLottery = async (newLotteryData, prevLottery) => {
-    setLoading(true);
-    lottery
-      .createLotteryAction(address, newLotteryData, prevLottery)
-      .then(() => {
-        toast(<NotificationSuccess text="New Lottery created successfully" />);
-        getLottery(address);
-        fetchBalance(address);
-      })
-      .catch((error) => {
-        console.log(error);
-        toast(<NotificationError text="Failed to create new Lottery" />);
-        setLoading(false);
-      });
+    try {
+      setLoading(true);
+      await lottery.createLotteryAction(address, newLotteryData, prevLottery)
+      toast(<NotificationSuccess text="New Lottery created successfully"/>);
+      getLottery(address);
+      fetchBalance(address);
+    } catch (error) {
+      console.log(error);
+      toast(<NotificationError text="Failed to create new Lottery"/>);
+      setLoading(false);
+    }
+
   };
 
   //  function to start Lottery
   const startLottery = async (newLottery) => {
-    setLoading(true);
-    lottery
-      .startLotteryAction(address, newLottery)
-      .then(() => {
-        toast(<NotificationSuccess text="Lottery Started" />);
-        getLottery(address);
-        fetchBalance(address);
-      })
-      .catch((error) => {
-        console.log(error);
-        toast(<NotificationError text="Failed to start Lottery" />);
-        setLoading(false);
-      });
+    try {
+      setLoading(true);
+      await lottery.startLotteryAction(address, newLottery)
+
+      toast(<NotificationSuccess text="Lottery Started"/>);
+      getLottery(address);
+      fetchBalance(address);
+    } catch (error) {
+      console.log(error);
+      toast(<NotificationError text="Failed to start Lottery"/>);
+      setLoading(false);
+    }
+
   };
 
   //  function to join Lottery
@@ -183,17 +182,24 @@ const Lottery = ({ address, fetchBalance }) => {
     ) {
       // create new lottery if(appId is 0) or when lottery status is ended or lottery fund sent
       openModal2(true);
-    } else if (checkLotteryStatus(0) && currentLottery.lottery_duration !== 0) {
+      return
+    }
+    if (checkLotteryStatus(0) && currentLottery.lottery_duration !== 0) {
       //start lottery when lottery status is 0 and lottery duration is more than 0
       startLottery(currentLottery);
       //deleteLottery(currentLottery);
-    } else if (checkLotteryStatus(1) && !lotteryEnded()) {
+      return
+    }
+    if (checkLotteryStatus(1) && !lotteryEnded()) {
       if (!userOptedIn()) {
         joinLottery(currentLottery.appId);
       } else {
         openModal(true);
       }
-    } else if (checkLotteryStatus(1) && lotteryEnded()) {
+      return
+    }
+
+    if (checkLotteryStatus(1) && lotteryEnded()) {
       endLottery(currentLottery);
     }
   };
