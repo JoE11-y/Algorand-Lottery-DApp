@@ -53,7 +53,7 @@ Here's how prize money is distributed:
 
 ## Notice
 - Due to the Dynamic cost of storing ticket positions in their respective bit slots, we reduced the number of tickets a player can buy at a time to 9 tickets (fills nine slots) as this is the limit of the opcode cost for a transaction, more updates will be provided, kindly accept our make shift fix for the lottery.
-- Also make sure you have enough algos in your wallet, as ticket purchases can fail due to insufficient free algo, as the ones in your wallet, may already be used to store a local state variable or global state variable (for app creators).
+- Also make sure you have enough algos in your wallet, as ticket purchases can fail due to insufficient free algo, as the ones in your wallet, may already be as storage for another application's local state variable or global state variable (for app creators).
 
 ## 1. Tech Stack
 This boilerplate uses the following tech stack:
