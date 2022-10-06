@@ -71,7 +71,7 @@ This boilerplate uses the following tech stack:
 
 1. Clone repo
    ```sh
-   git clone https://github.com/dacadeorg/algorand-react-marketplace.git
+   git clone https://github.com/JoE11-y/Algorand-Lottery-DApp.git
    ```
 
 2. Install packages
