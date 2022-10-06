@@ -324,7 +324,7 @@ export const endLotteryAction = async (senderAddress, lottery) => {
   });
 
   // check if lottery is valid
-  if (lottery.total_no_of_players < 2 && lottery.total_no_of_tickets < 5) {
+  if (lottery.total_no_of_players < 2 || lottery.total_no_of_tickets < 5) {
     // Get transaction ID
     let txId = appCallTxn.txID().toString();
 
