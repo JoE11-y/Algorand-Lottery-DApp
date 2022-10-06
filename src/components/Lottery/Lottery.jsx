@@ -176,7 +176,7 @@ const Lottery = ({ address, fetchBalance }) => {
   const userOptedIn = () => currentLottery.user_id !== 0;
 
   const lotteryValid = () =>
-    currentLottery.total_no_of_tickets > 5 ||
+    currentLottery.total_no_of_tickets > 5 &&
     currentLottery.total_no_of_players > 2;
 
   // handle Actions of the button

@@ -656,7 +656,7 @@ export function checkStatus(status, lotteryEndTime) {
   const end = new Date(lotteryEndTime * 1000);
 
   if (status === 1 && lotteryEndTime !== 0 && now > end) {
-    return "TIME EXHAUSTED, END LOTTERY TO GET LUCKY WINNER";
+    return "TIME EXHAUSTED";
   } else {
     switch (status) {
       case 0: {
