@@ -41,6 +41,8 @@ const BuyTicketForm = ({ lottery, open, onClose, buyTicket }) => {
           >
             <Form.Control
               type="number"
+              min={1}
+              max={9}
               onChange={(e) => onChange(e)}
               placeholder="Number of Tickets"
             />
