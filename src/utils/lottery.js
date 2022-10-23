@@ -67,7 +67,7 @@ export const createLotteryAction = async (
   newLotteryData,
   prevLottery
 ) => {
-  console.log("Creating new Lottery...");
+  
 
   let params = await algo.algodClient.getTransactionParams().do();
 
@@ -82,7 +82,7 @@ export const createLotteryAction = async (
   let appArgs = [duration, ticketPrice];
   let foreignApps = [prevLottery.appId];
 
-  console.log(foreignApps);
+  
 
   let txn = algosdk.makeApplicationCreateTxnFromObject({
     from: senderAddress,
@@ -104,7 +104,7 @@ export const createLotteryAction = async (
 
   // Sign & submit the transaction
   let signedTxn = await algo.myAlgoConnect.signTransaction(txn.toByte());
-  console.log("Signed transaction with txID: %s", txId);
+  
   await algo.algodClient.sendRawTransaction(signedTxn.blob).do();
 
   // Wait for transaction to be confirmed
@@ -115,25 +115,20 @@ export const createLotteryAction = async (
   );
 
   // Get the completed Transaction
-  console.log(
-    "Transaction " +
-      txId +
-      " confirmed in round " +
-      confirmedTxn["confirmed-round"]
-  );
+  
 
   // Get created application id and notify about completion
   let transactionResponse = await algo.algodClient
     .pendingTransactionInformation(txId)
     .do();
   let appId = transactionResponse["application-index"];
-  console.log("Created new app-id: ", appId);
+  
   return appId;
 };
 
 // START LOTTERY:
 export const startLotteryAction = async (senderAddress, newLottery) => {
-  console.log("Starting Lottery...");
+  
 
   let params = await algo.algodClient.getTransactionParams().do();
 
@@ -178,7 +173,7 @@ export const startLotteryAction = async (senderAddress, newLottery) => {
   let signedTxn = await algo.myAlgoConnect.signTransaction(
     txnArray.map((txn) => txn.toByte())
   );
-  console.log("Signed group transaction");
+  
   let tx = await algo.algodClient
     .sendRawTransaction(signedTxn.map((txn) => txn.blob))
     .do();
@@ -191,17 +186,12 @@ export const startLotteryAction = async (senderAddress, newLottery) => {
   );
 
   // Notify about completion
-  console.log(
-    "Group transaction " +
-      tx.txId +
-      " confirmed in round " +
-      confirmedTxn["confirmed-round"]
-  );
+  
 };
 
 // JOIN LOTTERY: OPT IN
 export const joinLotteryAction = async (senderAddress, index) => {
-  console.log("Opting in......");
+  
 
   let params = await algo.algodClient.getTransactionParams().do();
 
@@ -217,7 +207,7 @@ export const joinLotteryAction = async (senderAddress, index) => {
 
   // Sign & submit the transaction
   let signedTxn = await algo.myAlgoConnect.signTransaction(txn.toByte());
-  console.log("Signed transaction with txID: %s", txId);
+  
   await algo.algodClient.sendRawTransaction(signedTxn.blob).do();
 
   // Wait for transaction to be confirmed
@@ -228,22 +218,17 @@ export const joinLotteryAction = async (senderAddress, index) => {
   );
 
   // Get the completed Transaction
-  console.log(
-    "Transaction " +
-      txId +
-      " confirmed in round " +
-      confirmedTxn["confirmed-round"]
-  );
+  
   // display results
   let transactionResponse = await algo.algodClient
     .pendingTransactionInformation(txId)
     .do();
-  console.log("Opted-in to app-id:", transactionResponse["txn"]["txn"]["apid"]);
+  
 };
 
 // BUY TICKETS: No op Action
 export const buyTicketAction = async (senderAddress, lottery, noOfTickets) => {
-  console.log("Buying Tickets...");
+  
 
   let params = await algo.algodClient.getTransactionParams().do();
 
@@ -280,7 +265,7 @@ export const buyTicketAction = async (senderAddress, lottery, noOfTickets) => {
   let signedTxn = await algo.myAlgoConnect.signTransaction(
     txnArray.map((txn) => txn.toByte())
   );
-  console.log("Signed group transaction");
+  
   let tx = await algo.algodClient
     .sendRawTransaction(signedTxn.map((txn) => txn.blob))
     .do();
@@ -293,17 +278,12 @@ export const buyTicketAction = async (senderAddress, lottery, noOfTickets) => {
   );
 
   // Notify about completion
-  console.log(
-    "Group transaction " +
-      tx.txId +
-      " confirmed in round " +
-      confirmedTxn["confirmed-round"]
-  );
+  
 };
 
 //END LOTTERY: No op call
 export const endLotteryAction = async (senderAddress, lottery) => {
-  console.log("Ending Lottery...");
+  
 
   let params = await algo.algodClient.getTransactionParams().do();
 
@@ -332,7 +312,7 @@ export const endLotteryAction = async (senderAddress, lottery) => {
     let signedTxn = await algo.myAlgoConnect.signTransaction(
       appCallTxn.toByte()
     );
-    console.log("Signed transaction with txID: %s", txId);
+    
     await algo.algodClient.sendRawTransaction(signedTxn.blob).do();
 
     // Wait for transaction to be confirmed
@@ -343,12 +323,7 @@ export const endLotteryAction = async (senderAddress, lottery) => {
     );
 
     // Get the completed Transaction
-    console.log(
-      "Transaction " +
-        txId +
-        " confirmed in round " +
-        confirmedTxn["confirmed-round"]
-    );
+    
   } else {
     // Lottery is valid and Create PaymentTxn
     let paymentTxn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
@@ -368,7 +343,7 @@ export const endLotteryAction = async (senderAddress, lottery) => {
     let signedTxn = await algo.myAlgoConnect.signTransaction(
       txnArray.map((txn) => txn.toByte())
     );
-    console.log("Signed group transaction");
+    
     let tx = await algo.algodClient
       .sendRawTransaction(signedTxn.map((txn) => txn.blob))
       .do();
@@ -381,18 +356,13 @@ export const endLotteryAction = async (senderAddress, lottery) => {
     );
 
     // Notify about completion
-    console.log(
-      "Group transaction " +
-        tx.txId +
-        " confirmed in round " +
-        confirmedTxn["confirmed-round"]
-    );
+    
   }
 };
 
 // CHECK IF WINNER: no_op_call
 export const checkIfWinnerAction = async (senderAddress, lottery) => {
-  console.log("Running check...");
+  
 
   let params = await algo.algodClient.getTransactionParams().do();
 
@@ -414,7 +384,7 @@ export const checkIfWinnerAction = async (senderAddress, lottery) => {
 
   // Sign & submit the transaction
   let signedTxn = await algo.myAlgoConnect.signTransaction(txn.toByte());
-  console.log("Signed transaction with txID: %s", txId);
+  
   await algo.algodClient.sendRawTransaction(signedTxn.blob).do();
 
   // Wait for transaction to be confirmed
@@ -425,17 +395,12 @@ export const checkIfWinnerAction = async (senderAddress, lottery) => {
   );
 
   // Get the completed Transaction
-  console.log(
-    "Transaction " +
-      txId +
-      " confirmed in round " +
-      confirmedTxn["confirmed-round"]
-  );
+  
 };
 
 // DELETE LOTTERY:
 export const deleteLotteryAction = async (senderAddress, index) => {
-  console.log("Deleting application");
+  
 
   let params = await algo.algodClient.getTransactionParams().do();
 
@@ -451,7 +416,7 @@ export const deleteLotteryAction = async (senderAddress, index) => {
 
   // Sign & submit the transaction
   let signedTxn = await algo.myAlgoConnect.signTransaction(txn.toByte());
-  console.log("Signed transaction with txID: %s", txId);
+  
   await algo.algodClient.sendRawTransaction(signedTxn.blob).do();
 
   // Wait for transaction to be confirmed
@@ -462,24 +427,19 @@ export const deleteLotteryAction = async (senderAddress, index) => {
   );
 
   // Get the completed Transaction
-  console.log(
-    "Transaction " +
-      txId +
-      " confirmed in round " +
-      confirmedTxn["confirmed-round"]
-  );
+  
 
   // Get application id of deleted application and notify about completion
   let transactionResponse = await algo.algodClient
     .pendingTransactionInformation(txId)
     .do();
   let appId = transactionResponse["txn"]["txn"].apid;
-  console.log("Deleted app-id: ", appId);
+  
 };
 
 // GET Lotteries: Using Indexer
 export const getLotteriesAction = async (senderAddress) => {
-  console.log("Fetching Lotteries...");
+  
   let note = new TextEncoder().encode(algo.lotteryNote);
   let encodedNote = Buffer.from(note).toString("base64");
 
@@ -502,7 +462,7 @@ export const getLotteriesAction = async (senderAddress) => {
       }
     }
   }
-  console.log("Lotteries Fetched...");
+  
   return lotteries;
 };
 
